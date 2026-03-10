@@ -1,7 +1,7 @@
 [project]
 name = "zync"
 dynamic = ["version"]
-description = 'Write dual sync/async interfaces with minimal duplication.'
+description = "Write dual sync/async interfaces with minimal duplication."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -70,5 +70,6 @@ tests = ["tests"]
 
 [tool.coverage.report]
 precision = 2
-exclude_lines = ['pragma: no cover']
+exclude_lines = ["# pragma: no cover", "def __repr__", "@overload"]
+omit = ["tests/typing_tests.py"]
 show_missing = true

@@ -115,9 +115,7 @@ class zclassmethod(Generic[SelfT, P, ReturnT]):
 
         :param func: The method to wrap.
         """
-        if isinstance(func, classmethod):
-            func = func.__func__
-        self.func: Final[ZyncableMethod[type[SelfT], P, ReturnT]] = func
+        self.func: Final[ZyncableMethod[type[SelfT], P, ReturnT]] = func.__func__ if isinstance(func, classmethod) else func
         self.__name__: str = func.__name__
         self.__qualname__: str = getattr(func, '__qualname__', func.__name__)
         self.__doc__: str | None = getattr(func, '__doc__', None)
@@ -240,4 +238,6 @@ class zproperty(Generic[SelfT, ReturnT]):
             return self
         elif isinstance(instance, SyncMixin):
             return BoundZyncMethod(self.func, instance).run_sync()
-        return BoundZyncMethod(self.func, instance)
+        elif isinstance(instance, AsyncMixin):
+            return BoundZyncMethod(self.func, instance)
+        raise TypeError(f'{type(self).__name__} can only be accessed on instances of SyncMixin or AsyncMixin')

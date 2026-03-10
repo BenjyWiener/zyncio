@@ -1,21 +1,27 @@
-# `zyncio`
+# ZyncIO
 
-## Write dual sync/async interfaces with minimal duplication.
+Write dual sync/async interfaces with minimal duplication.
+
+[![PyPI - Version](https://img.shields.io/pypi/v/zyncio.svg)](https://pypi.org/project/zyncio)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/zyncio.svg)](https://pypi.org/project/zyncio)
+[![Coverage](https://coverage-badge.samuelcolvin.workers.dev/benjywiener/zyncio.svg)](https://coverage-badge.samuelcolvin.workers.dev/redirect/benjywiener/zyncio)
+
+---
+
+## What is ZyncIO?
 
 > If I had a nickel for every almost identical interface I had to write,
 > I'd have two nickels... which isn't a lot, but it's weird that I had to
 > write it twice.
 >
-> – Dr. Doofenshmirtz, before discovering zyncio.
+> – Dr. Doofenshmirtz, before discovering ZyncIO.
 
-# What is `zyncio`?
-
-`zyncio` allows you to write interfaces that can be used synchronously and asynchronously,
+ZyncIO allows you to write interfaces that can be used synchronously and asynchronously,
 while avoiding the code duplication this usually entails.
 
-# How does it work?
+## How does it work?
 
-`zyncio` works due to the fact that in Python you can actually run a coroutine **without an event loop**,
+ZyncIO works due to the fact that in Python you can actually run a coroutine **without an event loop**,
 as long as your chain of `await`s consists exclusively of other coroutines (i.e. no `Future`s or `Task`s):
 
 > The behavior of `await coroutine` is effectively the same as invoking a regular, synchronous Python function.
@@ -59,9 +65,9 @@ async def sleep_3(zync_mode: zyncio.Mode) -> None:
     await zync_sleep.run_zync(zync_mode, 3)
 ```
 
-## The real magic: `SyncMixin`/`AsyncMixin`, `zyncio.zmethod`, and `zyncio.zproperty`
+### The real magic: `SyncMixin`/`AsyncMixin`, `zyncio.zmethod`, and `zyncio.zproperty`
 
-The real power of `zyncio` comes out when implementing client interfaces:
+The real power of ZyncIO comes out when implementing client interfaces:
 
 1. Implement a single base client, using the `zyncio.zmethod` and `zyncio.zproperty`
    decorators.
@@ -136,7 +142,11 @@ async def use_async_client():
 asyncio.run(use_async_client())
 ```
 
-# Typing
+## Typing
 
-`zyncio` is fully typed, and built specifically for typed projects. If you're getting
+ZyncIO is fully typed, and built specifically for typed projects. If you're getting
 unexepcted type checking errors, please [open an issue](https://github.com/BenjyWiener/zyncio/issues).
+
+## License
+
+`zyncio` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.

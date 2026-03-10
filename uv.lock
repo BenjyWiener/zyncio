@@ -273,7 +273,7 @@ wheels = [
 ]
 
 [[package]]
-name = "zync"
+name = "zyncio"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },

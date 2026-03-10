@@ -1,11 +1,11 @@
-"""Unit tests for zync."""
+"""Unit tests for zyncio."""
 
 import asyncio
 import random
 
 import pytest
 
-import zync
+import zyncio
 
 from .client import AsyncClient, BaseClient, SyncClient
 from .utils import assert_no_running_loop, assert_running_loop
@@ -17,9 +17,9 @@ def rand_int() -> int:
     return random.randint(1, 100)
 
 
-@zync.zfunc
-async def _simple_zfunc(zync_mode: zync.Mode, x: int) -> int:
-    if zync_mode is zync.SYNC:
+@zyncio.zfunc
+async def _simple_zfunc(zync_mode: zyncio.Mode, x: int) -> int:
+    if zync_mode is zyncio.SYNC:
         assert_no_running_loop()
     else:
         assert_running_loop()
@@ -40,12 +40,12 @@ def test_zfunc_run_async(rand_int: int) -> None:
 def test_invalid_zfunc() -> None:
     """Test calling a `zfunc` that awaits non-coroutines in sync mode."""
 
-    @zync.zfunc
-    async def invalid_func(zync_mode: zync.Mode) -> None:
+    @zyncio.zfunc
+    async def invalid_func(zync_mode: zyncio.Mode) -> None:
         await asyncio.sleep(1)
 
     async def async_wrapper() -> None:
-        # Run `invalid_func` with a running event loop, so we can test that `zync` raises an
+        # Run `invalid_func` with a running event loop, so we can test that `zyncio` raises an
         # exception, instead of `asyncio.sleep` complaining about no running loop.
         invalid_func.run_sync()
 
@@ -74,8 +74,8 @@ def test_zmethod_no_mixin(rand_int: int) -> None:
 
 def test_zmethod_get_from_class() -> None:
     """Test that accessing a `zmethod` from a class returns the unbound `zmethod` object."""
-    assert isinstance(BaseClient.simple_zmethod, zync.zmethod)
-    assert isinstance(SyncClient.simple_zmethod, zync.zmethod)
+    assert isinstance(BaseClient.simple_zmethod, zyncio.zmethod)
+    assert isinstance(SyncClient.simple_zmethod, zyncio.zmethod)
 
 
 def test_nested_zmethod_sync(rand_int: int) -> None:
@@ -93,13 +93,13 @@ def test_nested_zmethod_async(rand_int: int) -> None:
 def test_zproperty_sync() -> None:
     """Test `zproperty` on a sync client."""
     client = SyncClient()
-    assert client.simple_zproperty == zync.SYNC
+    assert client.simple_zproperty == zyncio.SYNC
 
 
 def test_zproperty_async() -> None:
     """Test `zproperty` on an async client."""
     client = AsyncClient()
-    assert asyncio.run(client.simple_zproperty()) == zync.ASYNC
+    assert asyncio.run(client.simple_zproperty()) == zyncio.ASYNC
 
 
 def test_zproperty_no_mixin() -> None:
@@ -111,9 +111,9 @@ def test_zproperty_no_mixin() -> None:
 
 def test_zproperty_get_from_class() -> None:
     """Test that accessing a `zproperty` from a class returns the unbound `zproperty` object."""
-    assert isinstance(BaseClient.simple_zproperty, zync.zproperty)
-    assert isinstance(SyncClient.simple_zproperty, zync.zproperty)
-    assert isinstance(AsyncClient.simple_zproperty, zync.zproperty)
+    assert isinstance(BaseClient.simple_zproperty, zyncio.zproperty)
+    assert isinstance(SyncClient.simple_zproperty, zyncio.zproperty)
+    assert isinstance(AsyncClient.simple_zproperty, zyncio.zproperty)
 
 
 def test_zclassmethod_sync() -> None:

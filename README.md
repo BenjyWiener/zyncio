@@ -1,4 +1,4 @@
-# `zync`
+# `zyncio`
 
 ## Write dual sync/async interfaces with minimal duplication.
 
@@ -6,16 +6,16 @@
 > I'd have two nickels... which isn't a lot, but it's weird that I had to
 > write it twice.
 >
-> – Dr. Doofenshmirtz, before discovering zync.
+> – Dr. Doofenshmirtz, before discovering zyncio.
 
-# What is `zync`?
+# What is `zyncio`?
 
-`zync` allows you to write interfaces that can be used synchronously and asynchronously,
+`zyncio` allows you to write interfaces that can be used synchronously and asynchronously,
 while avoiding the code duplication this usually entails.
 
 # How does it work?
 
-`zync` works due to the fact that in Python you can actually run a coroutine **without an event loop**,
+`zyncio` works due to the fact that in Python you can actually run a coroutine **without an event loop**,
 as long as your chain of `await`s consists exclusively of other coroutines (i.e. no `Future`s or `Task`s):
 
 > The behavior of `await coroutine` is effectively the same as invoking a regular, synchronous Python function.
@@ -36,43 +36,43 @@ This means that a single `async def` function can be made to run in both synchro
 contexts, as long as we have a way to determine which mode we're currently using:
 
 ```python
-async def zync_sleep(zync_mode: zync.Mode, secs: float) -> None:
-    if zync_mode is zync.SYNC:
+async def zync_sleep(zync_mode: zyncio.Mode, secs: float) -> None:
+    if zync_mode is zyncio.SYNC:
         time.sleep(secs)
     else:
         await asyncio.sleep(secs)
 ```
 
 But this isn't very convenient; you need to pass an additional parameter, and running in
-sync mode is pretty clunky. That's where `zync.zfunc` comes in:
+sync mode is pretty clunky. That's where `zyncio.zfunc` comes in:
 
 ```python
-@zync.zfunc
-async def zync_sleep(zync_mode: zync.Mode, secs: float) -> None:
+@zyncio.zfunc
+async def zync_sleep(zync_mode: zyncio.Mode, secs: float) -> None:
     ...
 
 zync_sleep.run_sync(3)
 asyncio.run(zync_sleep.run_async(3))
 
-@zync.zfunc
-async def sleep_3(zync_mode: zync.Mode) -> None:
+@zyncio.zfunc
+async def sleep_3(zync_mode: zyncio.Mode) -> None:
     await zync_sleep.run_zync(zync_mode, 3)
 ```
 
-## The real magic: `SyncMixin`/`AsyncMixin`, `zync.zmethod`, and `zync.zproperty`
+## The real magic: `SyncMixin`/`AsyncMixin`, `zyncio.zmethod`, and `zyncio.zproperty`
 
-The real power of `zync` comes out when implementing client interfaces:
+The real power of `zyncio` comes out when implementing client interfaces:
 
-1. Implement a single base client, using the `zync.zmethod` and `zync.zproperty`
+1. Implement a single base client, using the `zyncio.zmethod` and `zyncio.zproperty`
    decorators.
 
-2. Create two subclasses a sync client and an async client, adding the `zync.SyncMixin`
-   and `zync.AsyncMixin` mixins respectively.
+2. Create two subclasses a sync client and an async client, adding the `zyncio.SyncMixin`
+   and `zyncio.AsyncMixin` mixins respectively.
 
-3. All of your `zync.zmethod`s magically become sync methods on the sync client and async
+3. All of your `zyncio.zmethod`s magically become sync methods on the sync client and async
    methods on the async client.
 
-   All of the `zync.zproperty`s magically become properties on the sync client, and async
+   All of the `zyncio.zproperty`s magically become properties on the sync client, and async
    methods on the async client.
 
 ```python
@@ -80,18 +80,18 @@ class BaseClient:
     def __init__(self, sock: socket.socket) -> None:
         self.sock: socket.socket = sock
 
-    @zync.zmethod
-    async def send_msg(self, zync_mode: zync.Mode, data: bytes) -> None:
-        if zync_mode is zync.SYNC:
+    @zyncio.zmethod
+    async def send_msg(self, zync_mode: zyncio.Mode, data: bytes) -> None:
+        if zync_mode is zyncio.SYNC:
             self.sock.sendall(data)
         else:
             loop = asyncio.get_running_loop()
             await loop.sock_sendall(self.sock, data)
 
-    @zync.zmethod
-    async def recv_msg(self, zync_mode: zync.Mode, n: int) -> bytes:
+    @zyncio.zmethod
+    async def recv_msg(self, zync_mode: zyncio.Mode, n: int) -> bytes:
         buf = b''
-        if zync_mode is zync.SYNC:
+        if zync_mode is zyncio.SYNC:
             while len(buf) < n:
                 buf += self.sock.recv(n)
         else:
@@ -100,24 +100,24 @@ class BaseClient:
                 buf += await loop.sock_recv(self.sock, n)
         return buf
 
-    @zync.zmethod
-    async def do_handshake(self, zync_mode: zync.Mode) -> None:
+    @zyncio.zmethod
+    async def do_handshake(self, zync_mode: zyncio.Mode) -> None:
         await self.send_msg.run_zync(zync_mode, HANDSHAKE_REQ)
         response = await self.recv_msg.run_zync(zync_mode, len(HANDSHAKE_RESP))
         if response != HANDSHAKE_RESP:
             raise RuntimeError('Handshake failed')
 
-    @zync.zproperty
-    async def status(self, zync_mode: zync.Mode) -> str:
+    @zyncio.zproperty
+    async def status(self, zync_mode: zyncio.Mode) -> str:
         await self.send_msg.run_zync(zync_mode, STATUS_REQ)
         return (await self.recv_msg.run_zync(zync_mode, STATUS_RESP_LEN)).decode()
 
 
-class SyncClient(BaseClient, zync.SyncMixin):
+class SyncClient(BaseClient, zyncio.SyncMixin):
     pass
 
 
-class AsyncClient(BaseClient, zync.AsyncMixin):
+class AsyncClient(BaseClient, zyncio.AsyncMixin):
     def __init__(self, sock: socket.socket) -> None:
         super().__init__(sock)
         self.sock.setblocking(False)
@@ -138,5 +138,5 @@ asyncio.run(use_async_client())
 
 # Typing
 
-`zync` is fully typed, and built specifically for typed projects. If you're getting
-unexepcted type checking errors, please [open an issue](https://github.com/BenjyWiener/zync/issues).
+`zyncio` is fully typed, and built specifically for typed projects. If you're getting
+unexepcted type checking errors, please [open an issue](https://github.com/BenjyWiener/zyncio/issues).

@@ -1,1 +1,1 @@
-"""Unit tests for zync."""
+"""Unit tests for zyncio."""

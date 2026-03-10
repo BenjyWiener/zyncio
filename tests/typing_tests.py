@@ -1,4 +1,4 @@
-"""Typing tests for zync.
+"""Typing tests for zyncio.
 
 This file is expected to pass type checking (with Pyright) without any errors.
 The tests are designed to ensure that valid usages have correct types inferred,
@@ -11,7 +11,7 @@ report lines that unexepectedly pass type checking.
 import asyncio
 from typing_extensions import assert_type
 
-import zync
+import zyncio
 
 from .client import AsyncClient, BaseClient, SyncClient
 
@@ -25,8 +25,8 @@ assert_type(sync_client.simple_zmethod(1), int)
 assert_type(asyncio.run(async_client.simple_zmethod(1)), int)
 
 base_client.simple_zproperty  # pyright: ignore[reportAttributeAccessIssue]
-assert_type(sync_client.simple_zproperty, zync.Mode)
-assert_type(asyncio.run(async_client.simple_zproperty()), zync.Mode)
+assert_type(sync_client.simple_zproperty, zyncio.Mode)
+assert_type(asyncio.run(async_client.simple_zproperty()), zyncio.Mode)
 
 base_client.class_method()  # pyright: ignore[reportCallIssue]
 assert_type(SyncClient.class_method(), type[SyncClient])

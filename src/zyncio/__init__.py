@@ -20,7 +20,7 @@ __all__ = [
 
 
 class Mode(Enum):
-    """`zync` execution mode."""
+    """`zyncio` execution mode."""
 
     SYNC = 'sync'
     ASYNC = 'async'
@@ -45,7 +45,7 @@ def _run_sync_coroutine(coro: Coroutine[Any, Any, ReturnT]) -> ReturnT:
     except StopIteration as e:
         return e.value
     else:
-        raise RuntimeError('zync functions must only await pure coroutines in sync mode')
+        raise RuntimeError('zyncio functions must only await pure coroutines in sync mode')
 
 
 class zfunc(Generic[P, ReturnT]):
@@ -74,11 +74,11 @@ class zfunc(Generic[P, ReturnT]):
 
 
 class SyncMixin:
-    """Mixin that makes `zync.zmethod`s into sync callables."""
+    """Mixin that makes `zyncio.zmethod`s into sync callables."""
 
 
 class AsyncMixin:
-    """Mixin that makes `zync.zmethod`s into async callables."""
+    """Mixin that makes `zyncio.zmethod`s into async callables."""
 
 
 class zmethod(Generic[SelfT, P, ReturnT]):
@@ -132,7 +132,7 @@ AsyncSelfT = TypeVar('AsyncSelfT', bound=AsyncMixin)
 
 
 class BoundZyncMethod(Generic[SelfT, P, ReturnT]):
-    """A bound `zync.zmethod`."""
+    """A bound `zyncio.zmethod`."""
 
     def __init__(self, func: ZyncableMethod[SelfT, P, ReturnT], instance: SelfT) -> None:
         """..
@@ -172,7 +172,7 @@ class BoundZyncMethod(Generic[SelfT, P, ReturnT]):
 
 
 class BoundZyncClassMethod(Generic[SelfT, P, ReturnT]):
-    """A bound `zync.zclassmethod`."""
+    """A bound `zyncio.zclassmethod`."""
 
     def __init__(self, func: ZyncableMethod[type[SelfT], P, ReturnT], cls: type[SelfT]) -> None:
         """..

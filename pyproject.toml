@@ -1,5 +1,5 @@
 [project]
-name = "zync"
+name = "zyncio"
 dynamic = ["version"]
 description = "Write dual sync/async interfaces with minimal duplication."
 readme = "README.md"
@@ -24,9 +24,9 @@ dependencies = ["typing_extensions~=4.0"]
 dev = ["coverage", "pytest", "pytest-cov"]
 
 [project.urls]
-Documentation = "https://github.com/BenjyWiener/zync#readme"
-Issues = "https://github.com/BenjyWiener/zync/issues"
-Source = "https://github.com/BenjyWiener/zync"
+Documentation = "https://github.com/BenjyWiener/zyncio#readme"
+Issues = "https://github.com/BenjyWiener/zyncio/issues"
+Source = "https://github.com/BenjyWiener/zyncio"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
@@ -61,11 +61,11 @@ reportUnnecessaryTypeIgnoreComment = "error"
 
 pythonVersion = "3.10"
 [tool.coverage.run]
-source_pkgs = ["zync", "tests"]
+source_pkgs = ["zyncio", "tests"]
 branch = true
 
 [tool.coverage.paths]
-zync = ["src/zync"]
+zyncio = ["src/zyncio"]
 tests = ["tests"]
 
 [tool.coverage.report]

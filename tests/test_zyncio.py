@@ -1,6 +1,7 @@
 """Unit tests for zyncio."""
 
 import asyncio
+from collections.abc import AsyncGenerator
 import random
 
 import pytest
@@ -169,10 +170,135 @@ def test_zclassmethod_no_mixin() -> None:
 
 
 def test_nested_zclassmethod_sync() -> None:
-    """Test `zclassmethod` on a sync client."""
+    """Test a nested `zclassmethod` on a sync client."""
     assert SyncClient.nested_class_method() is SyncClient
 
 
 def test_nested_zclassmethod_async() -> None:
-    """Test `zclassmethod` on an async client."""
+    """Test a nested `zclassmethod` on an async client."""
     assert asyncio.run(AsyncClient.nested_class_method()) is AsyncClient
+
+
+class CatchMe(Exception):
+    """Exception to try catching."""
+
+
+class DontCatchMe(Exception):
+    """Exception to propogate."""
+
+
+@zyncio.zcontextmanager
+async def context_manager(zync_mode: zyncio.Mode, x: int) -> AsyncGenerator[int]:
+    """Yield `x` unchanged, and catch `CatchMe` exceptions."""
+    try:
+        yield x
+    except CatchMe:
+        pass
+
+
+@zyncio.zcontextmanager
+async def nested_context_manager(zync_mode: zyncio.Mode, x: int) -> AsyncGenerator[int]:
+    """Yield `x` unchanged by calling through to `context_manager`."""
+    async with context_manager[zync_mode](x) as y:
+        yield y
+
+
+def test_zcontextmanager_sync(rand_int: int) -> None:
+    """Test `zcontextmanager.enter_sync`."""
+    with context_manager.enter_sync(rand_int) as val:
+        assert rand_int == val
+
+
+@pytest.mark.asyncio
+async def test_zcontextmanager_async(rand_int: int) -> None:
+    """Test `zcontextmanager.enter_async`."""
+    async with context_manager.enter_async(rand_int) as val:
+        assert rand_int == val
+
+
+def test_zcontextmanager_sync_caught_exception(rand_int: int) -> None:
+    """Test `zcontextmanager.enter_sync` with an exception that should be caught."""
+    with context_manager.enter_sync(rand_int) as val:
+        assert rand_int == val
+        raise CatchMe
+
+
+@pytest.mark.asyncio
+async def test_zcontextmanager_async_caught_exception(rand_int: int) -> None:
+    """Test `zcontextmanager.enter_async` with an exception that should be caught."""
+    async with context_manager.enter_async(rand_int) as val:
+        assert rand_int == val
+        raise CatchMe
+
+
+def test_zcontextmanager_sync_uncaught_exception(rand_int: int) -> None:
+    """Test `zcontextmanager.enter_sync` with an exception that should not be caught."""
+    with pytest.raises(DontCatchMe):
+        with context_manager.enter_sync(rand_int) as val:
+            assert rand_int == val
+            raise DontCatchMe
+
+
+@pytest.mark.asyncio
+async def test_zcontextmanager_async_uncaught_exception(rand_int: int) -> None:
+    """Test `zcontextmanager.enter_async` with an exception that should not be caught."""
+    with pytest.raises(DontCatchMe):
+        async with context_manager.enter_async(rand_int) as val:
+            assert rand_int == val
+            raise DontCatchMe
+
+
+def test_nested_zcontextmanager_sync(rand_int: int) -> None:
+    """Test `zcontextmanager.enter_sync` with a nested `zcontextmanager`."""
+    with nested_context_manager.enter_sync(rand_int) as val:
+        assert rand_int == val
+
+
+@pytest.mark.asyncio
+async def test_nested_zcontextmanager_async(rand_int: int) -> None:
+    """Test `zcontextmanager.enter_async` with a nested `zcontextmanager`."""
+    async with nested_context_manager.enter_async(rand_int) as val:
+        assert rand_int == val
+
+
+def test_zcontextmanagermethod_sync(rand_int: int) -> None:
+    """Test `zcontextmanagermethod` on a sync client."""
+    sync_client = SyncClient()
+    with sync_client.context_manager(rand_int) as val:
+        assert rand_int == val
+
+
+@pytest.mark.asyncio
+async def test_zcontextmanagermethod_async(rand_int: int) -> None:
+    """Test `zcontextmanagermethod` on an async client."""
+    async_client = AsyncClient()
+    async with async_client.context_manager(rand_int) as val:
+        assert rand_int == val
+
+
+def test_zcontextmanagermethod_no_mixin() -> None:
+    """Test that calling a `zcontextmanagermethod` raises if no mixin is used."""
+    client = BaseClient()
+    with pytest.raises(TypeError, match=r'Mixin'):
+        client.context_manager()  # pyright: ignore[reportCallIssue]
+
+
+def test_nested_zcontextmanagermethod_sync(rand_int: int) -> None:
+    """Test a nested `zcontextmanagermethod` on a sync client."""
+    client = SyncClient()
+    with client.nested_context_manager(rand_int) as val:
+        assert rand_int == val
+
+
+@pytest.mark.asyncio
+async def test_nested_zcontextmanagermethod_async(rand_int: int) -> None:
+    """Test a nested `zcontextmanagermethod` on an async client."""
+    client = AsyncClient()
+    async with client.nested_context_manager(rand_int) as val:
+        assert rand_int == val
+
+
+def test_zcontextmanagermethod_get_from_class() -> None:
+    """Test that accessing a `zcontextmanagermethod` from a class returns the unbound `zcontextmanagermethod` object."""
+    assert isinstance(BaseClient.context_manager, zyncio.zcontextmanagermethod)
+    assert isinstance(SyncClient.context_manager, zyncio.zcontextmanagermethod)

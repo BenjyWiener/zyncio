@@ -1,5 +1,6 @@
 """A test client."""
 
+from collections.abc import AsyncGenerator
 from typing_extensions import Self
 
 import zyncio
@@ -68,6 +69,17 @@ class BaseClient:
     async def nested_class_method(cls, zync_mode: zyncio.Mode) -> type[Self]:
         """Return the class the method was called on by calling through to `class_method`."""
         return await cls.class_method[zync_mode]()
+
+    @zyncio.zcontextmanagermethod
+    async def context_manager(self, zync_mode: zyncio.Mode, x: int) -> AsyncGenerator[int]:
+        """Yield `x` unchanged."""
+        yield x
+
+    @zyncio.zcontextmanagermethod
+    async def nested_context_manager(self, zync_mode: zyncio.Mode, x: int) -> AsyncGenerator[int]:
+        """Yield `x` unchanged by calling through to to `context_manager`."""
+        async with self.context_manager[zync_mode](x) as y:
+            yield y
 
 
 class SyncClient(BaseClient, zyncio.SyncMixin):

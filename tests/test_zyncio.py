@@ -39,6 +39,16 @@ def test_zfunc_run_async(rand_int: int) -> None:
     assert asyncio.run(_simple_zfunc.run_async(rand_int)) == rand_int
 
 
+def test_zfunc_run_zync(rand_int: int) -> None:
+    """Test `zfunc.run_zync`."""
+    assert asyncio.run(_simple_zfunc.run_zync(zyncio.ASYNC, rand_int)) == rand_int
+
+
+def test_zfunc_subscript(rand_int: int) -> None:
+    """Test `zfunc.__getitem__`."""
+    assert asyncio.run(_simple_zfunc[zyncio.ASYNC](rand_int)) == rand_int
+
+
 def test_invalid_zfunc() -> None:
     """Test calling a `zfunc` that awaits non-coroutines in sync mode."""
 
@@ -295,6 +305,14 @@ async def test_zcontextmanagermethod_async(rand_int: int) -> None:
         assert rand_int == val
 
 
+@pytest.mark.asyncio
+async def test_zcontextmanagermethod_zync(rand_int: int) -> None:
+    """Test `zcontextmanagermethod.enter_zync`."""
+    async_client = AsyncClient()
+    async with async_client.context_manager.enter_zync(zyncio.ASYNC, rand_int) as val:
+        assert rand_int == val
+
+
 def test_zcontextmanagermethod_no_mixin() -> None:
     """Test that calling a `zcontextmanagermethod` raises if no mixin is used."""
     client = BaseClient()
@@ -321,3 +339,119 @@ def test_zcontextmanagermethod_get_from_class() -> None:
     """Test that accessing a `zcontextmanagermethod` from a class returns the unbound `zcontextmanagermethod` object."""
     assert isinstance(BaseClient.context_manager, zyncio.zcontextmanagermethod)
     assert isinstance(SyncClient.context_manager, zyncio.zcontextmanagermethod)
+
+
+@zyncio.zgenerator
+async def simple_generator(zync_mode: zyncio.Mode, *args: int) -> AsyncGenerator[int]:
+    """Yield arguments unchanged."""
+    for arg in args:
+        yield arg
+
+
+def test_zgenerator_sync() -> None:
+    """Test `zgenerator.run_zync`."""
+    numbers = random.choices(range(1, 100), k=10)
+    assert [*simple_generator.run_sync(*numbers)] == numbers
+
+
+@pytest.mark.asyncio
+async def test_zgenerator_async() -> None:
+    """Test `zgenerator.run_async`."""
+    numbers = random.choices(range(1, 100), k=10)
+    assert [n async for n in simple_generator.run_async(*numbers)] == numbers
+
+
+@pytest.mark.asyncio
+async def test_zgenerator_zync() -> None:
+    """Test `zgenerator.run_zync`."""
+    numbers = random.choices(range(1, 100), k=10)
+    assert [n async for n in simple_generator.run_zync(zyncio.ASYNC, *numbers)] == numbers
+
+
+@pytest.mark.asyncio
+async def test_zgenerator_subscript(rand_int: int) -> None:
+    """Test `zgenerator.__getitem__`."""
+    numbers = random.choices(range(1, 100), k=10)
+    assert [n async for n in simple_generator[zyncio.ASYNC](*numbers)] == numbers
+
+
+@zyncio.zgenerator
+async def generator_with_send(zync_mode: zyncio.Mode, factor: int) -> AsyncGenerator[int, int]:
+    """Yield sent values multiplied by factor until `0` is sent."""
+    number = yield 0
+    while number := (yield (number * factor)):
+        pass
+
+
+def test_zgenerator_with_send_sync(rand_int: int) -> None:
+    """Test `zgenerator` with `send` in sync mode."""
+    numbers = random.choices(range(1, 100), k=10)
+    gen = generator_with_send.run_sync(rand_int)
+    next(gen)  # Prime the generator
+    for n in numbers:
+        assert gen.send(n) == n * rand_int
+
+    with pytest.raises(StopIteration):
+        gen.send(0)
+
+
+@pytest.mark.asyncio
+async def test_zgenerator_with_send_async(rand_int: int) -> None:
+    """Test `zgenerator` with `send` in async mode."""
+    numbers = random.choices(range(1, 100), k=10)
+    gen = generator_with_send.run_async(rand_int)
+    await anext(gen)  # Prime the generator
+    for n in numbers:
+        assert await gen.asend(n) == n * rand_int
+
+    with pytest.raises(StopAsyncIteration):
+        await gen.asend(0)
+
+
+def test_nested_zgeneratormethod_sync(rand_int: int) -> None:
+    """Test a nested `zgeneratormethod` on a sync client."""
+    client = SyncClient()
+    numbers = random.choices(range(1, 100), k=10)
+    assert [*client.nested_generator(rand_int, numbers)] == [rand_int * n for n in numbers]
+
+
+@pytest.mark.asyncio
+async def test_nested_zgeneratormethod_async(rand_int: int) -> None:
+    """Test a nested `zgeneratormethod` on an async client."""
+    client = AsyncClient()
+    numbers = random.choices(range(1, 100), k=10)
+    assert [n async for n in client.nested_generator(rand_int, numbers)] == [rand_int * n for n in numbers]
+
+
+@pytest.mark.asyncio
+async def test_zgeneratormethod_zync(rand_int: int) -> None:
+    """Test `zgeneratormethod.run_zync`."""
+    client = AsyncClient()
+    numbers = random.choices(range(1, 100), k=10)
+    assert [n async for n in client.nested_generator.run_zync(zyncio.ASYNC, rand_int, numbers)] == [rand_int * n for n in numbers]
+
+
+def test_zgeneratormethod_no_mixin() -> None:
+    """Test that calling a `zgeneratormethod` raises if no mixin is used."""
+    client = BaseClient()
+    with pytest.raises(TypeError, match=r'Mixin'):
+        client.generator_with_send()  # pyright: ignore[reportCallIssue]
+
+
+def test_zgeneratormethod_get_from_class() -> None:
+    """Test that accessing a `zgeneratormethod` from a class returns the unbound `zgeneratormethod` object."""
+    assert isinstance(BaseClient.generator_with_send, zyncio.zgeneratormethod)
+    assert isinstance(SyncClient.generator_with_send, zyncio.zgeneratormethod)
+
+
+def test_zync_proxy_sync(rand_int: int) -> None:
+    """Test `__zync_proxy__` functionality with a sync client."""
+    client = SyncClient()
+    assert client.user.use(rand_int) == rand_int
+
+
+@pytest.mark.asyncio
+async def test_zync_proxy_async(rand_int: int) -> None:
+    """Test `__zync_proxy__` functionality with an async client."""
+    client = AsyncClient()
+    assert await client.user.use(rand_int) == rand_int

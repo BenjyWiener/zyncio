@@ -12,6 +12,7 @@ report lines that unexepectedly pass type checking.
 from collections.abc import AsyncGenerator
 from typing_extensions import assert_type
 
+from tests.test_zyncio import nested_context_manager
 import zyncio
 
 from .client import AsyncClient, BaseClient, SyncClient
@@ -51,6 +52,16 @@ async def _() -> None:  # Allow using `await`
     async with async_client.context_manager(1) as x:
         assert_type(x, int)
 
+    base_client.nested_generator()  # pyright: ignore[reportCallIssue]
+    for n in sync_client.nested_generator(1, (1,)):
+        assert_type(n, int)
+    async for n in async_client.nested_generator(1, (1,)):
+        assert_type(n, int)
+
+    base_client.user.use()  # pyright: ignore[reportCallIssue]
+    assert_type(sync_client.user.use(1), int)
+    assert_type(await async_client.user.use(1), int)
+
 
 # Check that overriding `zmethod` etc. is allowed.
 class Parent:
@@ -67,6 +78,9 @@ class Parent:
     @zyncio.zcontextmanagermethod
     def contextmanagermethod(self, zync_mode: zyncio.Mode) -> AsyncGenerator[None]: ...
 
+    @zyncio.zgeneratormethod
+    def generatormethod(self, zync_mode: zyncio.Mode) -> AsyncGenerator[None]: ...
+
 
 class Child(Parent):
     @zyncio.zmethod
@@ -81,3 +95,6 @@ class Child(Parent):
 
     @zyncio.zcontextmanagermethod
     def contextmanagermethod(self, zync_mode: zyncio.Mode) -> AsyncGenerator[None]: ...
+
+    @zyncio.zgeneratormethod
+    def generatormethod(self, zync_mode: zyncio.Mode) -> AsyncGenerator[None]: ...

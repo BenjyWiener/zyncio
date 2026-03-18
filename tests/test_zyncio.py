@@ -101,7 +101,7 @@ def test_zmethod_async(rand_int: int) -> None:
 def test_zmethod_no_mixin(rand_int: int) -> None:
     """Test that calling a `zmethod` raises if no mixin is used."""
     client = BaseClient()
-    with pytest.raises(TypeError, match=r'__zync_mode__'):
+    with pytest.raises(TypeError, match=r'Mixin'):
         client.simple_zmethod(rand_int)  # pyright: ignore[reportCallIssue]
 
 
@@ -138,7 +138,7 @@ def test_zproperty_async() -> None:
 def test_zproperty_no_mixin() -> None:
     """Test that accessing a `zproperty` raises if no mixin is used."""
     client = BaseClient()
-    with pytest.raises(TypeError, match=r'__zync_mode__'):
+    with pytest.raises(TypeError, match=r'Mixin'):
         client.simple_zproperty  # pyright: ignore[reportAttributeAccessIssue]
 
 
@@ -174,7 +174,7 @@ async def test_settable_zproperty_async() -> None:
 def test_settable_zproperty_no_mixin() -> None:
     """Test that accessing a `ZyncSettableProperty` raises if no mixin is used."""
     client = BaseClient()
-    with pytest.raises(TypeError, match=r'__zync_mode__'):
+    with pytest.raises(TypeError, match=r'Mixin'):
         client.settable_zproperty  # pyright: ignore[reportAttributeAccessIssue]
 
 
@@ -197,7 +197,7 @@ def test_zclassmethod_async() -> None:
 
 def test_zclassmethod_no_mixin() -> None:
     """Test that calling a `zclassmethod` raises if no mixin is used."""
-    with pytest.raises(TypeError, match=r'__zync_mode__'):
+    with pytest.raises(TypeError, match=r'Mixin'):
         BaseClient.class_method()  # pyright: ignore[reportCallIssue]
 
 
@@ -319,7 +319,7 @@ async def test_zcontextmanagermethod_zync(rand_int: int) -> None:
 def test_zcontextmanagermethod_no_mixin() -> None:
     """Test that calling a `zcontextmanagermethod` raises if no mixin is used."""
     client = BaseClient()
-    with pytest.raises(TypeError, match=r'__zync_mode__'):
+    with pytest.raises(TypeError, match=r'Mixin'):
         client.context_manager()  # pyright: ignore[reportCallIssue]
 
 
@@ -437,7 +437,7 @@ async def test_zgeneratormethod_zync(rand_int: int) -> None:
 def test_zgeneratormethod_no_mixin() -> None:
     """Test that calling a `zgeneratormethod` raises if no mixin is used."""
     client = BaseClient()
-    with pytest.raises(TypeError, match=r'__zync_mode__'):
+    with pytest.raises(TypeError, match=r'Mixin'):
         client.generator_with_send()  # pyright: ignore[reportCallIssue]
 
 
@@ -458,3 +458,28 @@ async def test_zync_proxy_async(rand_int: int) -> None:
     """Test `__zync_proxy__` functionality with an async client."""
     client = AsyncClient()
     assert await client.user.use(rand_int) == rand_int
+
+
+def test_incorrect_mixin_inheritance_order() -> None:
+    """Test inherittance checks for `zyncio.SyncMixin` or `zyncio.AsyncMixin`.
+
+    Inheritting from one of the mixins in a way that shadows `__zync_mode__` should
+    raise a `TypeError`.
+    """
+    # Direct inheritance
+    with pytest.raises(TypeError, match=r'shadowed by definition in parent BaseClient'):
+
+        class BadChild(BaseClient, zyncio.SyncMixin):
+            pass
+
+    class Child(BaseClient):
+        pass
+
+    class OtherClass:
+        pass
+
+    # Indirect inheritance, error should mention the direct base class
+    with pytest.raises(TypeError, match=r'shadowed by definition in parent Child'):
+
+        class BadGrandhild(Child, OtherClass, zyncio.SyncMixin):
+            pass

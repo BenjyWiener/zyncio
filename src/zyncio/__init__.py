@@ -44,6 +44,9 @@ ZyncModeT_co = TypeVar('ZyncModeT_co', bound=Mode, covariant=True)
 """Convenience `TypeVar` for writing ZyncIO ABCs."""
 
 
+_REQUIRED_INTERFACE_MESSAGE = 'subclass zyncio.SyncMixin or zyncio.AsyncMixin, or define the __zync_proxy__() method to return one that does.'
+
+
 class _ZyncModeDescriptor(Generic[ZyncModeT_co]):
     """This descriptor allows us to define immutable (and therefore covariant) class constants.
 
@@ -52,12 +55,10 @@ class _ZyncModeDescriptor(Generic[ZyncModeT_co]):
 
     def __init__(self, mode: ZyncModeT_co = cast(Mode, ...)) -> None:
         self.mode: ZyncModeT_co = mode
-        if not isinstance(mode, Mode):
-            self.__isabstractmethod__ = True
 
-    def __get__(self, instance: object, owner: object) -> ZyncModeT_co:
+    def __get__(self, instance: object, owner: type | None) -> ZyncModeT_co:
         if not isinstance(self.mode, Mode):
-            raise AttributeError('__zync_mode__ is only accessible on classes or objects that define __zync_mode__ or __zync_proxy__')
+            raise AttributeError(f'__zync_mode__ is only accessible on classes or objects that {_REQUIRED_INTERFACE_MESSAGE}')
         return self.mode
 
 
@@ -89,6 +90,37 @@ class ZyncBase:
     __zync_mode__: _ZyncModeDescriptor[Mode] = _ZyncModeDescriptor()
 
 
+def _check_mixin_mro(cls: type, mixin_class: type) -> None:
+    for parent in cls.mro():
+        if parent is mixin_class:
+            # Stop once we find the mixin class, only earlier classes are
+            # potentially problematic.
+            break
+
+        if '__zync_mode__' in parent.__dict__:
+            # Try to find the specific direct base class that inherits from the
+            # problematic parent.
+            found_mixin_class = False
+            for base in cls.__bases__[::-1]:
+                # Skip base classes that come after the mixin
+                if not found_mixin_class:
+                    found_mixin_class = base is mixin_class
+                    continue
+
+                if parent in base.mro():
+                    parent = base
+                    break
+            else:  # pragma: no cover
+                pass
+
+            raise TypeError(
+                f'{mixin_class.__name__}: __zync_mode__ shadowed by definition in parent {parent.__name__}. '
+                f'{mixin_class.__name__} should come first in the inheritance list.'
+            )
+    else:  # pragma: no cover
+        pass
+
+
 class SyncMixin:
     """Mixin that makes bindable `zyncio` constructs into sync callables.
 
@@ -97,6 +129,9 @@ class SyncMixin:
     """
 
     __zync_mode__: _ZyncModeDescriptor[Literal[Mode.SYNC]] = _ZyncModeDescriptor(Mode.SYNC)
+
+    def __init_subclass__(cls) -> None:
+        _check_mixin_mro(cls, __class__)
 
 
 class AsyncMixin:
@@ -107,6 +142,9 @@ class AsyncMixin:
     """
 
     __zync_mode__: _ZyncModeDescriptor[Literal[Mode.ASYNC]] = _ZyncModeDescriptor(Mode.ASYNC)
+
+    def __init_subclass__(cls) -> None:
+        _check_mixin_mro(cls, __class__)
 
 
 # NOTE: We use covariant `TypeVar`s in some places where we should technically use
@@ -249,7 +287,7 @@ class BoundZyncMethod(_BoundZyncFunctionWrapper[ZyncSelfT_co, ZyncableMethod[Zyn
             case Mode.ASYNC:
                 return self.func(self.__self__, *args, **kwargs)
             case _:
-                raise TypeError(f'{type(self).__name__} is only callable on objects that define __zync_mode__ or __zync_proxy__')
+                raise TypeError(f'{type(self).__name__} is only callable on objects that {_REQUIRED_INTERFACE_MESSAGE}')
 
 
 class zclassmethod(_ZyncFunctionWrapper[ZyncableMethod[type[ZyncSelfT_co], P, ReturnT_co]]):
@@ -287,7 +325,7 @@ class BoundZyncClassMethod(_BoundZyncFunctionWrapper[type[ZyncSelfT], ZyncableMe
             case Mode.ASYNC:
                 return self.func(self.__self__, *args, **kwargs)
             case _:
-                raise TypeError(f'{type(self).__name__} is only callable on classes that define __zync_mode__ or __zync_proxy__')
+                raise TypeError(f'{type(self).__name__} is only callable on classes that subclass zyncio.SyncMixin or zyncio.AsyncMixin')
 
 
 class zproperty(_ZyncFunctionWrapper[ZyncableMethod[ZyncSelfT_co, [], ReturnT_co]]):
@@ -321,7 +359,7 @@ class zproperty(_ZyncFunctionWrapper[ZyncableMethod[ZyncSelfT_co, [], ReturnT_co
             case Mode.ASYNC:
                 return BoundZyncMethod(self.fget, instance)
             case _:
-                raise TypeError(f'{type(self).__name__} is only accessible on objects that define __zync_mode__ or __zync_proxy__')
+                raise TypeError(f'{type(self).__name__} is only accessible on objects that {_REQUIRED_INTERFACE_MESSAGE}')
 
     def setter(self, setter: ZyncableMethod[ZyncSelfT_co, [ReturnT_co], None]) -> 'ZyncSettableProperty[ZyncSelfT_co, ReturnT_co]':
         """Return a new `ZyncSettableProperty` with the given setter."""
@@ -360,7 +398,7 @@ class ZyncSettableProperty(zproperty[ZyncSelfT, ReturnT]):
             case Mode.ASYNC:
                 return BoundZyncSettableProperty(self.fget, self.fset, instance)
             case _:
-                raise TypeError(f'{type(self).__name__} is only accessible on objects that define __zync_mode__ or __zync_proxy__')
+                raise TypeError(f'{type(self).__name__} is only accessible on objects that {_REQUIRED_INTERFACE_MESSAGE}')
 
     def __set__(self: 'ZyncSettableProperty[SyncSelfT, ReturnT]', instance: SyncSelfT, value: ReturnT) -> None:
         match _get_zync_mode(instance):
@@ -369,7 +407,7 @@ class ZyncSettableProperty(zproperty[ZyncSelfT, ReturnT]):
             case Mode.ASYNC:
                 raise TypeError(f'{type(self).__name__}.__set__ does not support async mode')
             case _:  # pragma: no cover
-                raise TypeError(f'{type(self).__name__} is only settable on objects that define __zync_mode__ or __zync_proxy__')
+                raise TypeError(f'{type(self).__name__} is only settable on objects that {_REQUIRED_INTERFACE_MESSAGE}')
 
 
 class BoundZyncSettableProperty(BoundZyncMethod[ZyncSelfT, [], ReturnT]):
@@ -401,7 +439,7 @@ class BoundZyncSettableProperty(BoundZyncMethod[ZyncSelfT, [], ReturnT]):
             case Mode.ASYNC:
                 return await self.fset(self.__self__, value)
             case _:  # pragma: no cover
-                raise TypeError(f'{type(self).__name__} is only settable on objects that define __zync_mode__ or __zync_proxy__')
+                raise TypeError(f'{type(self).__name__} is only settable on objects that {_REQUIRED_INTERFACE_MESSAGE}')
 
 
 ZyncableGeneratorFunc: TypeAlias = Callable[Concatenate[Mode, P], AsyncGenerator[ReturnT_co, SendT_contra]]
@@ -505,7 +543,7 @@ class BoundZyncContextManagerMethod(_BoundZyncFunctionWrapper[ZyncSelfT, Zyncabl
             case Mode.ASYNC:
                 return self._cm(self.__self__, *args, **kwargs)
             case _:
-                raise TypeError(f'{type(self).__name__} is only callable on objects that define __zync_mode__ or __zync_proxy__')
+                raise TypeError(f'{type(self).__name__} is only callable on objects that {_REQUIRED_INTERFACE_MESSAGE}')
 
 
 class zgenerator(_ZyncFunctionWrapper[ZyncableGeneratorFunc[P, ReturnT_co, SendT_contra]]):
@@ -601,4 +639,4 @@ class BoundZyncGeneratorMethod(_BoundZyncFunctionWrapper[ZyncSelfT, ZyncableGene
             case Mode.ASYNC:
                 return self.func(self.__self__, *args, **kwargs)
             case _:
-                raise TypeError(f'{type(self).__name__} is only callable on objects that define __zync_mode__ or __zync_proxy__')
+                raise TypeError(f'{type(self).__name__} is only callable on objects that {_REQUIRED_INTERFACE_MESSAGE}')

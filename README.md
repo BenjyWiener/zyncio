@@ -120,12 +120,12 @@ class BaseClient(zyncio.ZyncBase):
         await self.send_msg.zync(STATUS_REQ)
         return (await self.recv_msg.zync(STATUS_RESP_LEN)).decode()
 
-
-class SyncClient(BaseClient, zyncio.SyncMixin):
+# IMPORTANT: The mixins need to come *before* the base class!
+class SyncClient(zyncio.SyncMixin, BaseClient):
     pass
 
 
-class AsyncClient(BaseClient, zyncio.AsyncMixin):
+class AsyncClient(zyncio.AsyncMixin, BaseClient):
     def __init__(self, sock: socket.socket) -> None:
         super().__init__(sock)
         self.sock.setblocking(False)

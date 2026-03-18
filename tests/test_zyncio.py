@@ -149,6 +149,18 @@ def test_zproperty_get_from_class() -> None:
     assert isinstance(AsyncClient.simple_zproperty, zyncio.zproperty)
 
 
+def test_nested_zproperty_sync() -> None:
+    """Test a nested `zproperty` on a sync client."""
+    client = SyncClient()
+    assert client.nested_property == zyncio.SYNC
+
+
+def test_nested_zproperty_async() -> None:
+    """Test a nested `zproperty` on an async client."""
+    client = AsyncClient()
+    assert asyncio.run(client.simple_zproperty()) == zyncio.ASYNC
+
+
 def test_settable_zproperty_sync() -> None:
     """Test `ZyncSettableProperty` on a sync client."""
     client = SyncClient()

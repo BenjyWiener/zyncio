@@ -32,6 +32,11 @@ class BaseClient(zyncio.ZyncBase):
         """Return the zyncio mode."""
         return self.__zync_mode__
 
+    @zyncio.zproperty
+    async def nested_property(self) -> zyncio.Mode:
+        """Return the zyncio mode by calling through to `simple_property`."""
+        return await type(self).simple_zproperty(self)
+
     _settable_zproperty: int = 0
 
     @zyncio.zproperty

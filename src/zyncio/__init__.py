@@ -361,6 +361,10 @@ class zproperty(_ZyncFunctionWrapper[ZyncableMethod[ZyncSelfT_co, [], ReturnT_co
             case _:
                 raise TypeError(f'{type(self).__name__} is only accessible on objects that {_REQUIRED_INTERFACE_MESSAGE}')
 
+    async def __call__(self: 'zproperty[ZyncSelfT, ReturnT_co]', instance: ZyncSelfT) -> ReturnT_co:
+        """Call this `zproperty`'s getter with the given instance."""
+        return await self.fget(instance)
+
     def setter(self, setter: ZyncableMethod[ZyncSelfT_co, [ReturnT_co], None]) -> 'ZyncSettableProperty[ZyncSelfT_co, ReturnT_co]':
         """Return a new `ZyncSettableProperty` with the given setter."""
         return ZyncSettableProperty(self.fget, setter)

@@ -84,22 +84,22 @@ The real power of ZyncIO comes out when implementing client interfaces:
    methods on the async client.
 
 ```python
-class BaseClient:
+class BaseClient(zyncio.ZyncBase):
     def __init__(self, sock: socket.socket) -> None:
         self.sock: socket.socket = sock
 
     @zyncio.zmethod
-    async def send_msg(self, zync_mode: zyncio.Mode, data: bytes) -> None:
-        if zync_mode is zyncio.SYNC:
+    async def send_msg(self, data: bytes) -> None:
+        if self.__zync_mode__ is zyncio.SYNC:
             self.sock.sendall(data)
         else:
             loop = asyncio.get_running_loop()
             await loop.sock_sendall(self.sock, data)
 
     @zyncio.zmethod
-    async def recv_msg(self, zync_mode: zyncio.Mode, n: int) -> bytes:
+    async def recv_msg(self, n: int) -> bytes:
         buf = b''
-        if zync_mode is zyncio.SYNC:
+        if self.__zync_mode__ is zyncio.SYNC:
             while len(buf) < n:
                 buf += self.sock.recv(n)
         else:
@@ -109,16 +109,16 @@ class BaseClient:
         return buf
 
     @zyncio.zmethod
-    async def do_handshake(self, zync_mode: zyncio.Mode) -> None:
-        await self.send_msg[zync_mode](HANDSHAKE_REQ)
-        response = await self.recv_msg[zync_mode](len(HANDSHAKE_RESP))
+    async def do_handshake(self) -> None:
+        await self.send_msg.zync(HANDSHAKE_REQ)
+        response = await self.recv_msg.zync(len(HANDSHAKE_RESP))
         if response != HANDSHAKE_RESP:
             raise RuntimeError('Handshake failed')
 
     @zyncio.zproperty
-    async def status(self, zync_mode: zyncio.Mode) -> str:
-        await self.send_msg[zync_mode](STATUS_REQ)
-        return (await self.recv_msg[zync_mode](STATUS_RESP_LEN)).decode()
+    async def status(self) -> str:
+        await self.send_msg.zync(STATUS_REQ)
+        return (await self.recv_msg.zync(STATUS_RESP_LEN)).decode()
 
 
 class SyncClient(BaseClient, zyncio.SyncMixin):

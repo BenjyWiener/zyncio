@@ -123,6 +123,13 @@ def test_nested_zmethod_async(rand_int: int) -> None:
     assert asyncio.run(client.nested_zmethod(rand_int)) == rand_int
 
 
+def test_overloaded_method_with_make_sync() -> None:
+    """Test `make_sync` on an overloaded method."""
+    client = SyncClient()
+    assert client.overloaded_method(True) is client
+    assert client.overloaded_method(False) is None
+
+
 def test_zproperty_sync() -> None:
     """Test `zproperty` on a sync client."""
     client = SyncClient()

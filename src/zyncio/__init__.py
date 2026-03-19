@@ -3,7 +3,7 @@
 from collections.abc import AsyncGenerator, Callable, Coroutine, Generator
 from contextlib import AbstractAsyncContextManager, AbstractContextManager, asynccontextmanager, contextmanager
 from enum import Enum
-from functools import cached_property, partial
+from functools import cached_property, partial, wraps
 import sys
 from typing import Any, Concatenate, Final, Generic, Literal, ParamSpec, Protocol, TypeAlias, TypeVar, cast, overload
 from typing_extensions import Self
@@ -15,6 +15,7 @@ __all__ = [
     'ASYNC',
     'ZyncModeT_co',
     'run_sync',
+    'make_sync',
     'zfunc',
     'zmethod',
     'zclassmethod',
@@ -198,6 +199,58 @@ def run_sync(coro: Coroutine[Any, Any, ReturnT_co]) -> ReturnT_co:
         return e.value
     else:
         raise RuntimeError('zyncio functions must only await pure coroutines in sync mode')
+
+
+def make_sync(func: Callable[P, Coroutine[Any, Any, ReturnT_co]]) -> Callable[P, ReturnT_co]:
+    """Wrap an async function make it run synchronously using `zyncio.run_sync`.
+
+    This function is useful for overloaded functions and methods, whose signatures can't
+    be captured properly by `zyncio.zmethod` etc.
+
+    Example::
+
+        class BaseClient(zyncio.ZyncBase):
+            @overload
+            async def _overloaded_method(self, x: str) -> bytes: ...
+            @overload
+            async def _overloaded_method(self, x: int) -> bool: ...
+            async def _overloaded_method(self, x: str | int) -> bytes | bool:
+                ...
+
+        class SyncClient(zyncio.SyncMixin, BaseClient):
+            overloaded_method = zyncio.make_sync(BaseClient._overloaded_method)
+
+        class AsyncClient(zyncio.AsyncMixin, BaseClient):
+            overloaded_method = BaseClient._overloaded_method
+
+    If any of your overload signatures use `Self`, you may need to define your
+    method outside of the class for type checkers to infer the correct type for `Self`
+    in subclasses::
+
+        class BaseClient(zyncio.ZyncBase):
+            ...
+
+        ClientT = TypeVar('ClientT', bound=BaseClient)
+
+        @overload
+        async def overloaded_method(self: ClientT, x: str) -> ClientT: ...
+        @overload
+        async def overloaded_method(self, x: int) -> bool: ...
+        async def overloaded_method(self: ClientT, x: str | int) -> ClientT | bool:
+            ...
+
+        class SyncClient(zyncio.SyncMixin, BaseClient):
+            overloaded_method = zyncio.make_sync(overloaded_method)
+
+        class AsyncClient(zyncio.AsyncMixin, BaseClient):
+            overloaded_method = overloaded_method
+    """
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> ReturnT_co:
+        return run_sync(func(*args, **kwargs))
+
+    return wrapper
 
 
 class _ZyncFunctionWrapper(Generic[CallableT]):

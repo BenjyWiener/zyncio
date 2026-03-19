@@ -1,7 +1,7 @@
 """A test client."""
 
 from collections.abc import AsyncGenerator, Iterable
-from typing import Generic, TypeVar
+from typing import Generic, Literal, TypeVar, overload
 from typing_extensions import Self
 
 import zyncio
@@ -113,15 +113,29 @@ class BaseClient(zyncio.ZyncBase):
         return ClientUser(self)
 
 
+ClientT = TypeVar('ClientT', bound=BaseClient)
+
+
+@overload
+async def overloaded_method(self: ClientT, return_self: Literal[True]) -> ClientT: ...
+@overload
+async def overloaded_method(self, return_self: Literal[False]) -> None: ...
+async def overloaded_method(self: ClientT, return_self: bool) -> ClientT | None:
+    """Return `self` iff `return_self` is `True`, otherwise return `None`."""
+    if return_self:
+        return self
+
+
 class SyncClient(zyncio.SyncMixin, BaseClient):
     """A sync client."""
+
+    overloaded_method = zyncio.make_sync(overloaded_method)
 
 
 class AsyncClient(zyncio.AsyncMixin, BaseClient):
     """An async client."""
 
-
-ClientT = TypeVar('ClientT', bound=BaseClient)
+    overloaded_method = overloaded_method
 
 
 class ClientUser(Generic[ClientT]):

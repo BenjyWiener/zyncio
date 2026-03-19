@@ -61,6 +61,11 @@ async def _() -> None:  # Allow using `await`
     assert_type(sync_client.user.use(1), int)
     assert_type(await async_client.user.use(1), int)
 
+    assert_type(sync_client.overloaded_method(True), SyncClient)
+    assert_type(sync_client.overloaded_method(False), None)
+    assert_type(await async_client.overloaded_method(True), AsyncClient)
+    assert_type(await async_client.overloaded_method(False), None)
+
 
 # Check that overriding `zmethod` etc. is allowed.
 class Parent:

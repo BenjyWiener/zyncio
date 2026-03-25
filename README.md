@@ -110,8 +110,8 @@ class BaseClient(zyncio.ZyncBase):
 
     @zyncio.zmethod
     async def do_handshake(self) -> None:
-        # `._` (or `.zync`) on bound `zmethod`'s (and similar callables)
-        # is always async, so you can `await` it independent of the running mode.
+        # `._` (or `.z`, `.call_zync`) on bound `zmethod`'s (and similar callables)
+        # always returns a coroutine, so you can `await` it independent of the running mode.
         await self.send_msg._(HANDSHAKE_REQ)
         response = await self.recv_msg._(len(HANDSHAKE_RESP))
         if response != HANDSHAKE_RESP:

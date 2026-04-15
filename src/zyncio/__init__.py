@@ -1,7 +1,7 @@
 """Write dual sync/async interfaces with minimal duplication."""
 
 from collections.abc import AsyncGenerator, Callable, Coroutine, Generator
-from contextlib import AbstractAsyncContextManager, AbstractContextManager, asynccontextmanager, contextmanager
+from contextlib import AbstractAsyncContextManager, AbstractContextManager, asynccontextmanager, closing, contextmanager
 from enum import Enum
 from functools import cached_property, partial, wraps
 import sys
@@ -191,12 +191,13 @@ def run_sync(coro: Coroutine[Any, Any, ReturnT_co]) -> ReturnT_co:
     Awaiting any non-coroutine (such as an `asyncio.Future`), at any point in the call chain,
     will cause the function to fail.
     """
-    try:
-        coro.send(None)
-    except StopIteration as e:
-        return e.value
-    else:
-        raise RuntimeError('zyncio functions must only await pure coroutines in sync mode')
+    with closing(coro):
+        try:
+            coro.send(None)
+        except StopIteration as e:
+            return e.value
+        else:
+            raise RuntimeError('zyncio functions must only await pure coroutines in sync mode')
 
 
 def make_sync(func: Callable[P, Coroutine[Any, Any, ReturnT_co]]) -> Callable[P, ReturnT_co]:

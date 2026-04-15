@@ -57,12 +57,12 @@ sync mode is pretty clunky. That's where `zyncio.zfunc` comes in:
 async def zync_sleep(zync_mode: zyncio.Mode, secs: float) -> None:
     ...
 
-zync_sleep.run_sync(3)
-asyncio.run(zync_sleep.run_async(3))
+zync_sleep.call_sync(3)
+asyncio.run(zync_sleep.call_async(3))
 
 @zyncio.zfunc
 async def sleep_3(zync_mode: zyncio.Mode) -> None:
-    await zync_sleep.run_zync(zync_mode, 3)
+    await zync_sleep.call_zync(zync_mode, 3)
 ```
 
 ### The real magic: `SyncMixin`/`AsyncMixin`, `zyncio.zmethod`, and `zyncio.zproperty`

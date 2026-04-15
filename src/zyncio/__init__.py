@@ -291,16 +291,16 @@ class _BoundZyncFunctionWrapper(Generic[T_co, CallableT]):
 class zfunc(_ZyncFunctionWrapper[Zyncable[P, ReturnT_co]]):
     """Wrap a function to run in both sync and async modes."""
 
-    async def run_zync(self, zync_mode: Mode, /, *args: P.args, **kwargs: P.kwargs) -> ReturnT_co:
-        """Run the function in the given mode."""
+    async def call_zync(self, zync_mode: Mode, /, *args: P.args, **kwargs: P.kwargs) -> ReturnT_co:
+        """Call the function in the given mode."""
         return await self.func(zync_mode, *args, **kwargs)
 
-    def run_sync(self, *args: P.args, **kwargs: P.kwargs) -> ReturnT_co:
-        """Run the function in sync mode."""
+    def call_sync(self, *args: P.args, **kwargs: P.kwargs) -> ReturnT_co:
+        """Call the function in sync mode."""
         return run_sync(self.func(SYNC, *args, **kwargs))
 
-    async def run_async(self, *args: P.args, **kwargs: P.kwargs) -> ReturnT_co:
-        """Run the function in async mode."""
+    async def call_async(self, *args: P.args, **kwargs: P.kwargs) -> ReturnT_co:
+        """Call the function in async mode."""
         return await self.func(ASYNC, *args, **kwargs)
 
 
@@ -529,17 +529,17 @@ class zcontextmanager(_ZyncFunctionWrapper[ZyncableGeneratorFunc[P, ReturnT_co, 
         self.cm_func: Callable[Concatenate[Mode, P], AbstractAsyncContextManager[ReturnT_co]] = asynccontextmanager(func)
 
     @asynccontextmanager
-    async def enter_zync(self, zync_mode: Mode, /, *args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[ReturnT_co]:
+    async def call_zync(self, zync_mode: Mode, /, *args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[ReturnT_co]:
         """Enter the context manager in the given mode."""
         async with self.cm_func(zync_mode, *args, **kwargs) as val:
             yield val
 
-    def enter_sync(self, *args: P.args, **kwargs: P.kwargs) -> AbstractContextManager[ReturnT_co]:
+    def call_sync(self, *args: P.args, **kwargs: P.kwargs) -> AbstractContextManager[ReturnT_co]:
         """Enter the context manager in sync mode."""
         return _async_context_manager_to_sync(self.cm_func(SYNC, *args, **kwargs))
 
     @asynccontextmanager
-    async def enter_async(self, *args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[ReturnT_co]:
+    async def call_async(self, *args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[ReturnT_co]:
         """Enter the context manager in the given mode."""
         async with self.cm_func(ASYNC, *args, **kwargs) as val:
             yield val
@@ -611,12 +611,12 @@ class zgenerator(_ZyncFunctionWrapper[ZyncableGeneratorFunc[P, ReturnT_co, SendT
         """
         super().__init__(func)
 
-    def run_zync(self, zync_mode: Mode, /, *args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[ReturnT_co, SendT_contra]:
-        """Run the generator function in the given mode."""
+    def call_zync(self, zync_mode: Mode, /, *args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[ReturnT_co, SendT_contra]:
+        """Call the generator function in the given mode."""
         return self.func(zync_mode, *args, **kwargs)
 
-    def run_sync(self, *args: P.args, **kwargs: P.kwargs) -> Generator[ReturnT_co, SendT_contra]:
-        """Run the generator function in sync mode."""
+    def call_sync(self, *args: P.args, **kwargs: P.kwargs) -> Generator[ReturnT_co, SendT_contra]:
+        """Call the generator function in sync mode."""
         async_gen = self.func(SYNC, *args, **kwargs)
         try:
             send_val = yield run_sync(anext(async_gen))
@@ -625,8 +625,8 @@ class zgenerator(_ZyncFunctionWrapper[ZyncableGeneratorFunc[P, ReturnT_co, SendT
         except StopAsyncIteration:
             pass
 
-    def run_async(self, *args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[ReturnT_co, SendT_contra]:
-        """Run the generator function in async mode."""
+    def call_async(self, *args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[ReturnT_co, SendT_contra]:
+        """Call the generator function in async mode."""
         return self.func(ASYNC, *args, **kwargs)
 
 

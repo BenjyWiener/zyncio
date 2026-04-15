@@ -31,23 +31,23 @@ async def _simple_zfunc(zync_mode: zyncio.Mode, x: int) -> int:
 
 
 def test_zfunc_run_sync(rand_int: int) -> None:
-    """Test `zfunc.run_sync`."""
-    assert _simple_zfunc.run_sync(rand_int) == rand_int
+    """Test `zfunc.call_sync`."""
+    assert _simple_zfunc.call_sync(rand_int) == rand_int
 
 
 def test_zfunc_run_async(rand_int: int) -> None:
-    """Test `zfunc.run_async`."""
-    assert asyncio.run(_simple_zfunc.run_async(rand_int)) == rand_int
+    """Test `zfunc.call_async`."""
+    assert asyncio.run(_simple_zfunc.call_async(rand_int)) == rand_int
 
 
 def test_zfunc_run_zync(rand_int: int) -> None:
-    """Test `zfunc.run_zync`."""
-    assert asyncio.run(_simple_zfunc.run_zync(zyncio.ASYNC, rand_int)) == rand_int
+    """Test `zfunc.call_zync`."""
+    assert asyncio.run(_simple_zfunc.call_zync(zyncio.ASYNC, rand_int)) == rand_int
 
 
 def test_zfunc_subscript(rand_int: int) -> None:
     """Test `zfunc.__getitem__`."""
-    assert asyncio.run(_simple_zfunc.run_zync(zyncio.ASYNC, rand_int)) == rand_int
+    assert asyncio.run(_simple_zfunc.call_zync(zyncio.ASYNC, rand_int)) == rand_int
 
 
 def test_invalid_zfunc() -> None:
@@ -60,7 +60,7 @@ def test_invalid_zfunc() -> None:
     async def async_wrapper() -> None:
         # Run `invalid_func` with a running event loop, so we can test that `zyncio` raises an
         # exception, instead of `asyncio.sleep` complaining about no running loop.
-        invalid_func.run_sync()
+        invalid_func.call_sync()
 
     with pytest.raises(RuntimeError, match=r'sync mode'):
         asyncio.run(async_wrapper())
@@ -248,65 +248,65 @@ async def context_manager(zync_mode: zyncio.Mode, x: int) -> AsyncGenerator[int]
 @zyncio.zcontextmanager
 async def nested_context_manager(zync_mode: zyncio.Mode, x: int) -> AsyncGenerator[int]:
     """Yield `x` unchanged by calling through to `context_manager`."""
-    async with context_manager.enter_zync(zync_mode, x) as y:
+    async with context_manager.call_zync(zync_mode, x) as y:
         yield y
 
 
 def test_zcontextmanager_sync(rand_int: int) -> None:
-    """Test `zcontextmanager.enter_sync`."""
-    with context_manager.enter_sync(rand_int) as val:
+    """Test `zcontextmanager.call_sync`."""
+    with context_manager.call_sync(rand_int) as val:
         assert rand_int == val
 
 
 @pytest.mark.asyncio
 async def test_zcontextmanager_async(rand_int: int) -> None:
-    """Test `zcontextmanager.enter_async`."""
-    async with context_manager.enter_async(rand_int) as val:
+    """Test `zcontextmanager.call_async`."""
+    async with context_manager.call_async(rand_int) as val:
         assert rand_int == val
 
 
 def test_zcontextmanager_sync_caught_exception(rand_int: int) -> None:
-    """Test `zcontextmanager.enter_sync` with an exception that should be caught."""
-    with context_manager.enter_sync(rand_int) as val:
+    """Test `zcontextmanager.call_sync` with an exception that should be caught."""
+    with context_manager.call_sync(rand_int) as val:
         assert rand_int == val
         raise CatchMe
 
 
 @pytest.mark.asyncio
 async def test_zcontextmanager_async_caught_exception(rand_int: int) -> None:
-    """Test `zcontextmanager.enter_async` with an exception that should be caught."""
-    async with context_manager.enter_async(rand_int) as val:
+    """Test `zcontextmanager.call_async` with an exception that should be caught."""
+    async with context_manager.call_async(rand_int) as val:
         assert rand_int == val
         raise CatchMe
 
 
 def test_zcontextmanager_sync_uncaught_exception(rand_int: int) -> None:
-    """Test `zcontextmanager.enter_sync` with an exception that should not be caught."""
+    """Test `zcontextmanager.call_sync` with an exception that should not be caught."""
     with pytest.raises(DontCatchMe):
-        with context_manager.enter_sync(rand_int) as val:
+        with context_manager.call_sync(rand_int) as val:
             assert rand_int == val
             raise DontCatchMe
 
 
 @pytest.mark.asyncio
 async def test_zcontextmanager_async_uncaught_exception(rand_int: int) -> None:
-    """Test `zcontextmanager.enter_async` with an exception that should not be caught."""
+    """Test `zcontextmanager.call_async` with an exception that should not be caught."""
     with pytest.raises(DontCatchMe):
-        async with context_manager.enter_async(rand_int) as val:
+        async with context_manager.call_async(rand_int) as val:
             assert rand_int == val
             raise DontCatchMe
 
 
 def test_nested_zcontextmanager_sync(rand_int: int) -> None:
-    """Test `zcontextmanager.enter_sync` with a nested `zcontextmanager`."""
-    with nested_context_manager.enter_sync(rand_int) as val:
+    """Test `zcontextmanager.call_sync` with a nested `zcontextmanager`."""
+    with nested_context_manager.call_sync(rand_int) as val:
         assert rand_int == val
 
 
 @pytest.mark.asyncio
 async def test_nested_zcontextmanager_async(rand_int: int) -> None:
-    """Test `zcontextmanager.enter_async` with a nested `zcontextmanager`."""
-    async with nested_context_manager.enter_async(rand_int) as val:
+    """Test `zcontextmanager.call_async` with a nested `zcontextmanager`."""
+    async with nested_context_manager.call_async(rand_int) as val:
         assert rand_int == val
 
 
@@ -369,30 +369,30 @@ async def simple_generator(zync_mode: zyncio.Mode, *args: int) -> AsyncGenerator
 
 
 def test_zgenerator_sync() -> None:
-    """Test `zgenerator.run_zync`."""
+    """Test `zgenerator.call_zync`."""
     numbers = random.choices(range(1, 100), k=10)
-    assert [*simple_generator.run_sync(*numbers)] == numbers
+    assert [*simple_generator.call_sync(*numbers)] == numbers
 
 
 @pytest.mark.asyncio
 async def test_zgenerator_async() -> None:
-    """Test `zgenerator.run_async`."""
+    """Test `zgenerator.call_async`."""
     numbers = random.choices(range(1, 100), k=10)
-    assert [n async for n in simple_generator.run_async(*numbers)] == numbers
+    assert [n async for n in simple_generator.call_async(*numbers)] == numbers
 
 
 @pytest.mark.asyncio
 async def test_zgenerator_zync() -> None:
-    """Test `zgenerator.run_zync`."""
+    """Test `zgenerator.call_zync`."""
     numbers = random.choices(range(1, 100), k=10)
-    assert [n async for n in simple_generator.run_zync(zyncio.ASYNC, *numbers)] == numbers
+    assert [n async for n in simple_generator.call_zync(zyncio.ASYNC, *numbers)] == numbers
 
 
 @pytest.mark.asyncio
 async def test_zgenerator_subscript() -> None:
     """Test `zgenerator.__getitem__`."""
     numbers = random.choices(range(1, 100), k=10)
-    assert [n async for n in simple_generator.run_zync(zyncio.ASYNC, *numbers)] == numbers
+    assert [n async for n in simple_generator.call_zync(zyncio.ASYNC, *numbers)] == numbers
 
 
 @zyncio.zgenerator
@@ -406,7 +406,7 @@ async def generator_with_send(zync_mode: zyncio.Mode, factor: int) -> AsyncGener
 def test_zgenerator_with_send_sync(rand_int: int) -> None:
     """Test `zgenerator` with `send` in sync mode."""
     numbers = random.choices(range(1, 100), k=10)
-    gen = generator_with_send.run_sync(rand_int)
+    gen = generator_with_send.call_sync(rand_int)
     next(gen)  # Prime the generator
     for n in numbers:
         assert gen.send(n) == n * rand_int
@@ -419,7 +419,7 @@ def test_zgenerator_with_send_sync(rand_int: int) -> None:
 async def test_zgenerator_with_send_async(rand_int: int) -> None:
     """Test `zgenerator` with `send` in async mode."""
     numbers = random.choices(range(1, 100), k=10)
-    gen = generator_with_send.run_async(rand_int)
+    gen = generator_with_send.call_async(rand_int)
     await anext(gen)  # Prime the generator
     for n in numbers:
         assert await gen.asend(n) == n * rand_int

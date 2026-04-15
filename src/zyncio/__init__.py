@@ -626,6 +626,8 @@ class zgenerator(_ZyncFunctionWrapper[ZyncableGeneratorFunc[P, ReturnT_co, SendT
                 send_val = yield run_sync(async_gen.asend(send_val))
         except StopAsyncIteration:
             pass
+        finally:
+            run_sync(async_gen.aclose())
 
     def call_async(self, *args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[ReturnT_co, SendT_contra]:
         """Call the generator function in async mode."""
@@ -675,6 +677,8 @@ class BoundZyncGeneratorMethod(_BoundZyncFunctionWrapper[T, ZyncableGeneratorMet
                 send_val = yield run_sync(async_gen.asend(send_val))
         except StopAsyncIteration:
             pass
+        finally:
+            run_sync(async_gen.aclose())
 
     @overload
     def __call__(

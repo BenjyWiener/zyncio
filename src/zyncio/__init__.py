@@ -326,8 +326,8 @@ class BoundZyncMethod(_BoundZyncFunctionWrapper[T_co, ZyncableMethod[T_co, P, Re
         """Run the method as a coroutine regardless of mode."""
         return await self.func(self.__self__, *args, **kwargs)
 
-    # Aliases for `call_zync`.
-    _ = z = call_zync
+    # Alias for `call_zync`.
+    z = call_zync
 
     @overload
     def __call__(self: 'BoundZyncMethod[SyncT, P, ReturnT_co]', *args: P.args, **kwargs: P.kwargs) -> ReturnT_co: ...
@@ -368,8 +368,8 @@ class BoundZyncClassMethod(_BoundZyncFunctionWrapper[type[T], ZyncableMethod[typ
         """Run the method as a coroutine regardless of mode."""
         return await self.func(self.__self__, *args, **kwargs)
 
-    # Aliases for `call_zync`.
-    _ = z = call_zync
+    # Alias for `call_zync`.
+    z = call_zync
 
     @overload
     def __call__(self: 'BoundZyncClassMethod[SyncClassT, P, ReturnT_co]', *args: P.args, **kwargs: P.kwargs) -> ReturnT_co: ...
@@ -580,8 +580,8 @@ class BoundZyncContextManagerMethod(_BoundZyncFunctionWrapper[T, ZyncableGenerat
         """Enter the context manager as an async context manager regardless of mode."""
         return self._cm(self.__self__, *args, **kwargs)
 
-    # Aliases for `call_zync`.
-    _ = z = call_zync
+    # Alias for `call_zync`.
+    z = call_zync
 
     @overload
     def __call__(
@@ -661,8 +661,8 @@ class BoundZyncGeneratorMethod(_BoundZyncFunctionWrapper[T, ZyncableGeneratorMet
         """Run the generator function in the given mode."""
         return self.func(self.__self__, *args, **kwargs)
 
-    # Aliases for `call_zync`.
-    _ = z = call_zync
+    # Alias for `call_zync`.
+    z = call_zync
 
     def _run_sync(self, *args: P.args, **kwargs: P.kwargs) -> Generator[ReturnT_co, SendT_contra]:
         """Run the generator function as an async generator regardless of mode."""

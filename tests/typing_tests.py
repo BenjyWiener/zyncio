@@ -24,7 +24,7 @@ async_client = AsyncClient()
 
 async def _() -> None:  # Allow using `await`
     base_client.simple_zmethod(1)  # pyright: ignore[reportCallIssue]
-    assert_type(await base_client.simple_zmethod._(1), int)
+    assert_type(await base_client.simple_zmethod.z(1), int)
     assert_type(sync_client.simple_zmethod(1), int)
     assert_type(await async_client.simple_zmethod(1), int)
 

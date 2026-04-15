@@ -327,9 +327,9 @@ async def test_zcontextmanagermethod_async(rand_int: int) -> None:
 
 @pytest.mark.asyncio
 async def test_zcontextmanagermethod_zync(rand_int: int) -> None:
-    """Test `zcontextmanagermethod._`."""
+    """Test `zcontextmanagermethod.z`."""
     async_client = AsyncClient()
-    async with async_client.context_manager._(rand_int) as val:
+    async with async_client.context_manager.z(rand_int) as val:
         assert rand_int == val
 
 
@@ -445,10 +445,10 @@ async def test_nested_zgeneratormethod_async(rand_int: int) -> None:
 
 @pytest.mark.asyncio
 async def test_zgeneratormethod_zync(rand_int: int) -> None:
-    """Test `zgeneratormethod._`."""
+    """Test `zgeneratormethod.z`."""
     client = AsyncClient()
     numbers = random.choices(range(1, 100), k=10)
-    assert [n async for n in client.nested_generator._(rand_int, numbers)] == [rand_int * n for n in numbers]
+    assert [n async for n in client.nested_generator.z(rand_int, numbers)] == [rand_int * n for n in numbers]
 
 
 def test_zgeneratormethod_no_mixin() -> None:

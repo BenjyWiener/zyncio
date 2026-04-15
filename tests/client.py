@@ -25,7 +25,7 @@ class BaseClient:
     @zyncio.zmethod
     async def nested_zmethod(self, x: int) -> int:
         """Return `x` unchanged by calling through to `simple_zmethod`."""
-        return await self.simple_zmethod._(x)
+        return await self.simple_zmethod.z(x)
 
     @zyncio.zproperty
     async def simple_zproperty(self) -> zyncio.Mode | None:
@@ -74,7 +74,7 @@ class BaseClient:
     @classmethod
     async def nested_class_method(cls) -> type[Self]:
         """Return the class the method was called on by calling through to `class_method`."""
-        return await cls.class_method._()
+        return await cls.class_method.z()
 
     @zyncio.zcontextmanagermethod
     async def context_manager(self, x: int) -> AsyncGenerator[int]:
@@ -84,7 +84,7 @@ class BaseClient:
     @zyncio.zcontextmanagermethod
     async def nested_context_manager(self, x: int) -> AsyncGenerator[int]:
         """Yield `x` unchanged by calling through to to `context_manager`."""
-        async with self.context_manager._(x) as y:
+        async with self.context_manager.z(x) as y:
             yield y
 
     @zyncio.zgeneratormethod
@@ -97,7 +97,7 @@ class BaseClient:
     @zyncio.zgeneratormethod
     async def nested_generator(self, factor: int, numbers: Iterable[int]) -> AsyncGenerator[int]:
         """Yield numbers from `numbers` multiplied by `factor` by calling through to `generator_with_send`."""
-        gen = self.generator_with_send._(factor)
+        gen = self.generator_with_send.z(factor)
         await anext(gen)  # Prime the generator
         for n in numbers:
             yield await gen.asend(n)
@@ -151,7 +151,7 @@ class ClientUser(Generic[ClientT_co]):
     @zyncio.zmethod
     async def use(self, x: int) -> int:
         """Return `x` unchanged by calling through to `self.client.simple_zmethod`."""
-        return await self.client.simple_zmethod._(x)
+        return await self.client.simple_zmethod.z(x)
 
     @property
     def user(self) -> 'ClientUserUser[Self]':
@@ -175,4 +175,4 @@ class ClientUserUser(Generic[ClientUserT_co]):
     @zyncio.zmethod
     async def use(self, x: int) -> int:
         """Return `x` unchanged by calling through to `self.client_user.use`."""
-        return await self.client_user.use._(x)
+        return await self.client_user.use.z(x)

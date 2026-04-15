@@ -108,17 +108,17 @@ class BaseClient:
 
     @zyncio.zmethod
     async def do_handshake(self) -> None:
-        # `._` (or `.z`, `.call_zync`) on bound `zmethod`'s (and similar callables)
+        # `.z` (or `.call_zync`) on bound `zmethod`'s (and similar callables)
         # always returns a coroutine, so you can `await` it independent of the running mode.
-        await self.send_msg._(HANDSHAKE_REQ)
-        response = await self.recv_msg._(len(HANDSHAKE_RESP))
+        await self.send_msg.z(HANDSHAKE_REQ)
+        response = await self.recv_msg.z(len(HANDSHAKE_RESP))
         if response != HANDSHAKE_RESP:
             raise RuntimeError('Handshake failed')
 
     @zyncio.zproperty
     async def status(self) -> str:
-        await self.send_msg._(STATUS_REQ)
-        return (await self.recv_msg._(STATUS_RESP_LEN)).decode()
+        await self.send_msg.z(STATUS_REQ)
+        return (await self.recv_msg.z(STATUS_RESP_LEN)).decode()
 
 
 class SyncClient(BaseClient, zyncio.SyncMixin):

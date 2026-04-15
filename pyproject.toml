@@ -1,8 +1,7 @@
 [project]
 name = "zyncio"
-dynamic = ["version"]
+dynamic = ["version", "readme"]
 description = "Write dual sync/async interfaces with minimal duplication."
-readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 keywords = ["async", "zync"]
@@ -20,7 +19,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Typing :: Typed",
 ]
-
 dependencies = ["typing_extensions~=4.0; python_version<'3.13'"]
 
 [project.urls]
@@ -59,6 +57,9 @@ requires-python = ">=3.14"
 
 [tool.hatch.version]
 source = "vcs"
+
+[tool.hatch.metadata.hooks.custom]
+path = "metadata_hook.py"
 
 [tool.ruff]
 target-version = "py310"

@@ -154,4 +154,4 @@ unexepcted type checking errors, please [open an issue](https://github.com/Benjy
 
 ## License
 
-`zyncio` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+ZyncIO is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.

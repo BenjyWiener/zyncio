@@ -27,7 +27,7 @@ jobs:
         env:
           COVERAGE_FILE: coverage/coverage-${{ matrix.python-version }}
       - name: Upload coverage files
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-${{ matrix.python-version }}
           path: coverage
@@ -44,7 +44,7 @@ jobs:
         with:
           version: "0.11.6"
       - name: Get coverage files
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: coverage-*
           path: coverage

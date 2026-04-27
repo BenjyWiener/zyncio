@@ -22,7 +22,7 @@ classifiers = [
 dependencies = ["typing_extensions~=4.0; python_version<'3.13'"]
 
 [project.urls]
-Documentation = "https://github.com/BenjyWiener/zyncio#readme"
+Documentation = "https://zyncio.readthedocs.io"
 Issues = "https://github.com/BenjyWiener/zyncio/issues"
 Source = "https://github.com/BenjyWiener/zyncio"
 

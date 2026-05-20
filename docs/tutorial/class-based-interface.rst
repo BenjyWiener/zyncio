@@ -297,7 +297,7 @@ Let's fix our code:
     You can use ``.z(...)`` as an alias of ``.call_zync(...)``.
 
 .. tip::
-    If your method is private (i.e. you never need to call it in sync mode), don't decorate it with
+    If your method is private and only ever called from other ZyncIO code, don't decorate it with
     ``@zyncio.zmethod``. That way you can call it normally, without ``call_zync``.
 
 

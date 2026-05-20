@@ -101,4 +101,5 @@ Ready to get started? Check out :doc:`the tutorial <tutorial/index>`, or dive in
     :hidden:
 
     tutorial/index
+    why-zyncio
     api/index

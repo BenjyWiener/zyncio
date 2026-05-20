@@ -67,21 +67,19 @@ async def sleep_3(zync_mode: zyncio.Mode) -> None:
     await zync_sleep.call_zync(zync_mode, 3)
 ```
 
-### The real magic: `SyncMixin`/`AsyncMixin`, `zyncio.zmethod`, and `zyncio.zproperty`
+### The real magic: the class-based API
 
 The real power of ZyncIO comes out when implementing client interfaces:
 
-1. Implement a single base client, using the `zyncio.zmethod` and `zyncio.zproperty`
-   decorators.
+1. Implement a single base client, using, `zyncio.zmethod`, `zyncio.zproperty` and the other
+   ZyncIO method decorators.
 
 2. Create two subclasses a sync client and an async client, adding the `zyncio.SyncMixin`
    and `zyncio.AsyncMixin` mixins respectively.
 
-3. All of your `zyncio.zmethod`s magically become sync methods on the sync client and async
-   methods on the async client.
-
-   All of the `zyncio.zproperty`s magically become properties on the sync client, and async
-   methods on the async client.
+All of the `zyncio.zmethod`s automatically become sync methods on the sync client and async
+methods on the async client. `zyncio.zproperty`s become properties on the sync client, and async
+methods on the async client.
 
 ```python
 class BaseClient:
@@ -142,10 +140,14 @@ print('Status:', sync_client.status)  # Sync property
 async def use_async_client():
     async_client = AsyncClient(sock)
     await async_client.do_handshake()  # Magically async!
-    print('Status:', await sync_client.status())  # Async func
+    print('Status:', await sync_client.status())  # Async method
 
 asyncio.run(use_async_client())
 ```
+
+### Further Reading
+
+[Check out the documentation](https://zyncio.readthedocs.io) for a tutorial and the full API.
 
 ## Typing
 

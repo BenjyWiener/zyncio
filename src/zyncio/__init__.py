@@ -6,7 +6,9 @@ from contextlib import AbstractAsyncContextManager, AbstractContextManager, asyn
 from enum import Enum
 from functools import cached_property, wraps
 import sys
+from types import FunctionType, MethodType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Concatenate,
     Final,
@@ -322,6 +324,17 @@ class _ZyncFunctionWrapper(Generic[CallableT]):
         if getattr(func, '__isabstractmethod__', False):
             self.__isabstractmethod__: bool = True
 
+    if not TYPE_CHECKING:
+        __class__ = FunctionType
+
+        def __getattr__(self, name: str) -> object:  # pragma: no cover
+            try:
+                return getattr(self.func, name)
+            except AttributeError:
+                pass
+            # Raise an `AttributeError` for `self` instead of `self.func`.
+            return super().__getattribute__(name)
+
     def __repr__(self) -> str:
         return f'<{self.__module__}.{type(self).__name__} {self.__qualname__}>'
 
@@ -338,6 +351,17 @@ class _BoundZyncFunctionWrapper(Generic[T_co, CallableT]):
         self.__name__: str = getattr(func, '__name__', _UNKNOWN_FUNC_NAME)
         self.__qualname__: str = getattr(func, '__qualname__', self.__name__)
         self.__doc__: str | None = getattr(func, '__doc__', None)
+
+    if not TYPE_CHECKING:
+        __class__ = MethodType
+
+        def __getattr__(self, name: str) -> object:  # pragma: no cover
+            try:
+                return getattr(MethodType(self.func, self.__self__), name)
+            except AttributeError:
+                pass
+            # Raise an `AttributeError` for `self` instead of `self.func`.
+            return super().__getattribute__(name)
 
     def __repr__(self) -> str:
         return f'<{self.__module__}.{type(self).__name__} {self.func.__qualname__} of {self.__self__!r}>'

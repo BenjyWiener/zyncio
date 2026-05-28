@@ -102,4 +102,5 @@ Ready to get started? Check out :doc:`the tutorial <tutorial/index>`, or dive in
 
     tutorial/index
     why-zyncio
+    typing-support
     api/index

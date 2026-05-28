@@ -104,7 +104,7 @@ def _fix_boundfunctionwrapper_init_signatures() -> None:
             # Create wrapper with more precise annotations for `func` and `instance`.
             for base in getattr(cls, '__orig_bases__', ()):
                 if get_origin(base) is zyncio._BoundZyncFunctionWrapper:
-                    (instance_annotation, func_annotation) = get_args(base)
+                    (_mode, instance_annotation, func_annotation) = get_args(base)
 
                     def __init__(self, func, instance):
                         return zyncio._BoundZyncFunctionWrapper.__init__(self, func, instance)

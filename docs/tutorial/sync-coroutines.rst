@@ -27,7 +27,9 @@ coroutines also exclusively ``await`` other coroutines, and so on, we call it a 
     The behavior of `await coroutine` is effectively the same as invoking a regular,
     synchronous Python function.
 
-    -- `A Conceptual Overview of asyncio <https://docs.python.org/3/howto/a-conceptual-overview-of-asyncio.html#await>`_
+    -- `A Conceptual Overview of asyncio`_
+
+.. _A Conceptual Overview of asyncio: https://docs.python.org/3/howto/a-conceptual-overview-of-asyncio.html#await
 
 
 Executing a Sync Coroutine

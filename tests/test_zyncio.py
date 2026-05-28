@@ -69,7 +69,7 @@ def test_abstract_zmethod() -> None:
         async def abstract(self) -> None: ...  # pragma: no cover
 
     with pytest.raises(TypeError, match=r'abstract method'):
-        Abstract()  # pyright: ignore[reportAbstractUsage]
+        Abstract()  # type: ignore[x-pyrefly,x-ty]
 
     class Concrete(Abstract):
         @zyncio.zmethod
@@ -81,71 +81,83 @@ def test_abstract_zmethod() -> None:
 def test_zmethod_sync(rand_int: int) -> None:
     """Test `zmethod` on a sync client."""
     client = SyncClient()
-    assert client.simple_zmethod(rand_int) == rand_int
+    assert client.simple_method(rand_int) == rand_int
 
 
 def test_zmethod_async(rand_int: int) -> None:
     """Test `zmethod` on an async client."""
     client = AsyncClient()
-    assert asyncio.run(client.simple_zmethod(rand_int)) == rand_int
+    assert asyncio.run(client.simple_method(rand_int)) == rand_int
 
 
 def test_zmethod_no_mixin(rand_int: int) -> None:
     """Test that calling a `zmethod` raises if no mixin is used."""
     client = BaseClient()
     with pytest.raises(TypeError, match=r'Mixin'):
-        client.simple_zmethod(rand_int)  # pyright: ignore[reportCallIssue]
+        client.simple_method(rand_int)  # type: ignore
 
 
 def test_zmethod_get_from_class() -> None:
     """Test that accessing a `zmethod` from a class returns the unbound `zmethod` object."""
-    assert isinstance(BaseClient.simple_zmethod, zyncio.zmethod)
-    assert isinstance(SyncClient.simple_zmethod, zyncio.zmethod)
+    assert isinstance(BaseClient.simple_method, zyncio.zmethod)
+    assert isinstance(SyncClient.simple_method, zyncio.zmethod)
 
 
 def test_nested_zmethod_sync(rand_int: int) -> None:
     """Test nested `zmethod` on a sync client."""
     client = SyncClient()
-    assert client.nested_zmethod(rand_int) == rand_int
+    assert client.nested_method(rand_int) == rand_int
 
 
 def test_nested_zmethod_async(rand_int: int) -> None:
     """Test nested `zmethod` on an async client."""
     client = AsyncClient()
-    assert asyncio.run(client.nested_zmethod(rand_int)) == rand_int
+    assert asyncio.run(client.nested_method(rand_int)) == rand_int
+
+
+def test_generic_self_zmethod_sync() -> None:
+    """Test a generic-over-self `zmethod` on a sync client."""
+    client = SyncClient()
+    assert client.generic_self_method() is client
+
+
+def test_generic_self_zmethod_async() -> None:
+    """Test a generic-over-self `zmethod` on an async client."""
+    client = AsyncClient()
+    assert asyncio.run(client.generic_self_method()) is client
 
 
 def test_overloaded_method_with_make_sync() -> None:
     """Test `make_sync` on an overloaded method."""
     client = SyncClient()
-    assert client.overloaded_method(True) is client
-    assert client.overloaded_method(False) is None
+    assert client.overloaded_method(True) is client  # ty: ignore  # zuban: ignore
+    assert client.overloaded_method(False) is None  # zuban: ignore
 
 
 def test_zproperty_sync() -> None:
     """Test `zproperty` on a sync client."""
     client = SyncClient()
-    assert client.simple_zproperty == zyncio.SYNC
+    assert client.simple_property == zyncio.SYNC
 
 
 def test_zproperty_async() -> None:
     """Test `zproperty` on an async client."""
     client = AsyncClient()
-    assert asyncio.run(client.simple_zproperty()) == zyncio.ASYNC
+    assert asyncio.run(client.simple_property()) == zyncio.ASYNC
 
 
 def test_zproperty_no_mixin() -> None:
     """Test that accessing a `zproperty` raises if no mixin is used."""
     client = BaseClient()
     with pytest.raises(TypeError, match=r'Mixin'):
-        client.simple_zproperty  # pyright: ignore[reportAttributeAccessIssue]
+        client.simple_property  # type: ignore[x-ty]
 
 
 def test_zproperty_get_from_class() -> None:
     """Test that accessing a `zproperty` from a class returns the unbound `zproperty` object."""
-    assert isinstance(BaseClient.simple_zproperty, zyncio.zproperty)
-    assert isinstance(SyncClient.simple_zproperty, zyncio.zproperty)
-    assert isinstance(AsyncClient.simple_zproperty, zyncio.zproperty)
+    assert isinstance(BaseClient.simple_property, zyncio.zproperty)
+    assert isinstance(SyncClient.simple_property, zyncio.zproperty)
+    assert isinstance(AsyncClient.simple_property, zyncio.zproperty)
 
 
 def test_nested_zproperty_sync() -> None:
@@ -157,69 +169,69 @@ def test_nested_zproperty_sync() -> None:
 def test_nested_zproperty_async() -> None:
     """Test a nested `zproperty` on an async client."""
     client = AsyncClient()
-    assert asyncio.run(client.simple_zproperty()) == zyncio.ASYNC
+    assert asyncio.run(client.simple_property()) == zyncio.ASYNC
 
 
 def test_settable_zproperty_sync() -> None:
     """Test `ZyncSettableProperty` on a sync client."""
     client = SyncClient()
-    initial_value = client.settable_zproperty
+    initial_value = client.settable_property
     new_value = initial_value + 1
-    client.settable_zproperty = new_value
-    assert client.settable_zproperty == new_value
+    client.settable_property = new_value
+    assert client.settable_property == new_value
 
 
 @pytest.mark.asyncio
 async def test_settable_zproperty_async() -> None:
     """Test `ZyncSettableProperty` on an async client."""
     client = AsyncClient()
-    initial_value = await client.settable_zproperty()
+    initial_value = await client.settable_property()
     new_value = initial_value + 1
-    await client.settable_zproperty.set(new_value)
-    assert await client.settable_zproperty() == new_value
+    await client.settable_property.set(new_value)
+    assert await client.settable_property() == new_value
 
     with pytest.raises(TypeError, match=r'async mode'):
-        client.settable_zproperty = new_value  # pyright: ignore[reportAttributeAccessIssue]
+        client.settable_property = new_value  # type: ignore
 
 
 def test_settable_zproperty_no_mixin() -> None:
     """Test that accessing a `ZyncSettableProperty` raises if no mixin is used."""
     client = BaseClient()
     with pytest.raises(TypeError, match=r'Mixin'):
-        client.settable_zproperty  # pyright: ignore[reportAttributeAccessIssue]
+        client.settable_property  # type: ignore[x-ty]
 
 
 def test_settable_zproperty_get_from_class() -> None:
     """Test that accessing a `ZyncSettableProperty` from a class returns the unbound `ZyncSettableProperty` object."""
-    assert isinstance(BaseClient.settable_zproperty, zyncio.ZyncSettableProperty)
-    assert isinstance(SyncClient.settable_zproperty, zyncio.ZyncSettableProperty)
-    assert isinstance(AsyncClient.settable_zproperty, zyncio.ZyncSettableProperty)
+    assert isinstance(BaseClient.settable_property, zyncio.ZyncSettableProperty)
+    assert isinstance(SyncClient.settable_property, zyncio.ZyncSettableProperty)
+    assert isinstance(AsyncClient.settable_property, zyncio.ZyncSettableProperty)
 
 
-def test_zclassmethod_sync() -> None:
+def test_zclassmethod_sync(rand_int: int) -> None:
     """Test `zclassmethod` on a sync client."""
-    assert SyncClient.class_method() is SyncClient
+    assert SyncClient.simple_class_method(rand_int) == rand_int
 
 
-def test_zclassmethod_async() -> None:
+def test_zclassmethod_async(rand_int: int) -> None:
     """Test `zclassmethod` on an async client."""
-    assert asyncio.run(AsyncClient.class_method()) is AsyncClient
+    assert asyncio.run(AsyncClient.simple_class_method(rand_int)) == rand_int
 
 
 def test_zclassmethod_no_mixin() -> None:
     """Test that calling a `zclassmethod` raises if no mixin is used."""
     with pytest.raises(TypeError, match=r'Mixin'):
-        BaseClient.class_method()  # pyright: ignore[reportCallIssue]
+        BaseClient.simple_class_method(0)  # type: ignore
 
 
-def test_nested_zclassmethod_sync() -> None:
+def test_nested_zclassmethod_sync(rand_int: int) -> None:
     """Test a nested `zclassmethod` on a sync client."""
-    assert SyncClient.nested_class_method() is SyncClient
+    assert SyncClient.nested_class_method(rand_int) == rand_int
 
 
-def test_nested_zclassmethod_async() -> None:
+def test_nested_zclassmethod_async(rand_int: int) -> None:
     """Test a nested `zclassmethod` on an async client."""
-    assert asyncio.run(AsyncClient.nested_class_method()) is AsyncClient
+    assert asyncio.run(AsyncClient.nested_class_method(rand_int)) == rand_int
 
 
 class CatchMe(Exception):
@@ -331,7 +343,7 @@ def test_zcontextmanagermethod_no_mixin() -> None:
     """Test that calling a `zcontextmanagermethod` raises if no mixin is used."""
     client = BaseClient()
     with pytest.raises(TypeError, match=r'Mixin'):
-        client.context_manager()  # pyright: ignore[reportCallIssue]
+        client.context_manager()  # type: ignore
 
 
 def test_nested_zcontextmanagermethod_sync(rand_int: int) -> None:
@@ -442,7 +454,7 @@ def test_zgeneratormethod_no_mixin() -> None:
     """Test that calling a `zgeneratormethod` raises if no mixin is used."""
     client = BaseClient()
     with pytest.raises(TypeError, match=r'Mixin'):
-        client.generator_with_send()  # pyright: ignore[reportCallIssue]
+        client.generator_with_send()  # type: ignore
 
 
 def test_zgeneratormethod_get_from_class() -> None:
@@ -521,17 +533,23 @@ def test_type_guards(rand_int: int) -> None:
     clients: list[BaseClient] = [BaseClient(), SyncClient(), AsyncClient()]
     for client in clients:
         if zyncio.is_sync(client):
-            assert client.simple_zmethod(rand_int) == rand_int
+            assert (
+                # pyrefly: ignore
+                client.simple_method(rand_int) == rand_int  # zuban: ignore
+            )
         elif zyncio.is_async(client):
-            assert asyncio.run(client.simple_zmethod(rand_int)) == rand_int
+            # pyrefly: ignore
+            assert asyncio.run(client.simple_method(rand_int)) == rand_int  # zuban: ignore
         else:
             pass
 
     client_classes: list[type[BaseClient]] = [BaseClient, SyncClient, AsyncClient]
     for client_class in client_classes:
         if zyncio.is_sync_class(client_class):
-            assert client_class.class_method() is SyncClient
+            # pyrefly: ignore
+            assert client_class.simple_class_method(rand_int) == rand_int  # ty: ignore
         elif zyncio.is_async_class(client_class):
-            assert asyncio.run(client_class.class_method()) is AsyncClient
+            # pyrefly: ignore
+            assert asyncio.run(client_class.simple_class_method(rand_int)) == rand_int  # ty: ignore
         else:
             pass

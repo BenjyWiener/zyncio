@@ -13,7 +13,7 @@ class BaseClient:
     """A basic zyncio-based client."""
 
     @zyncio.zmethod
-    async def simple_zmethod(self, x: int) -> int:
+    async def simple_method(self, x: int) -> int:
         """Return `x` unchanged."""
         if zyncio.is_sync(self):
             assert_no_running_loop()
@@ -23,58 +23,68 @@ class BaseClient:
         return x
 
     @zyncio.zmethod
-    async def nested_zmethod(self, x: int) -> int:
+    async def nested_method(self, x: int) -> int:
         """Return `x` unchanged by calling through to `simple_zmethod`."""
-        return await self.simple_zmethod.z(x)
+        return await self.simple_method.z(x)
+
+    @zyncio.zmethod
+    async def generic_self_method(self) -> Self:
+        """Return the object the method was called on."""
+        if zyncio.is_sync(self):
+            assert_no_running_loop()
+        else:
+            assert_running_loop()
+
+        return self
 
     @zyncio.zproperty
-    async def simple_zproperty(self) -> zyncio.Mode | None:
+    async def simple_property(self) -> zyncio.Mode | None:
         """Return the zyncio mode."""
         return zyncio.get_mode(self)
 
     @zyncio.zproperty
     async def nested_property(self) -> zyncio.Mode | None:
         """Return the zyncio mode by calling through to `simple_property`."""
-        return await type(self).simple_zproperty(self)
+        return await type(self).simple_property(self)
 
-    _settable_zproperty: int = 0
+    _settable_property: int = 0
 
     @zyncio.zproperty
-    async def _settable_zproperty_getter(self) -> int:
+    async def _settable_property_getter(self) -> int:
         """Return the zyncio mode."""
         if zyncio.is_sync(self):
             assert_no_running_loop()
         else:
             assert_running_loop()
 
-        return self._settable_zproperty
+        return self._settable_property
 
-    @_settable_zproperty_getter.setter
-    async def settable_zproperty(self, value: int) -> None:
+    @_settable_property_getter.setter
+    async def settable_property(self, value: int) -> None:
         """Set the zyncio mode."""
         if zyncio.is_sync(self):
             assert_no_running_loop()
         else:
             assert_running_loop()
 
-        self._settable_zproperty = value
+        self._settable_property = value
 
     @zyncio.zclassmethod
     @classmethod
-    async def class_method(cls) -> type[Self]:
-        """Return the class the method was called on."""
-        if zyncio.is_sync_class(cls):
-            assert_no_running_loop()
+    async def simple_class_method(cls, x: int) -> int:  # zuban: ignore
+        """Return `x` unchanged."""
+        if zyncio.is_sync_class(cls):  # zuban: ignore
+            assert_no_running_loop()  # zuban: ignore
         else:
             assert_running_loop()
 
-        return cls
+        return x  # zuban: ignore
 
     @zyncio.zclassmethod
     @classmethod
-    async def nested_class_method(cls) -> type[Self]:
-        """Return the class the method was called on by calling through to `class_method`."""
-        return await cls.class_method.z()
+    async def nested_class_method(cls, x: int) -> int:  # zuban: ignore
+        """Return `x` unchanged by calling through to `simple_class_method`."""
+        return await cls.simple_class_method.z(x)
 
     @zyncio.zcontextmanagermethod
     async def context_manager(self, x: int) -> AsyncGenerator[int]:
@@ -117,13 +127,20 @@ ClientT_co = TypeVar('ClientT_co', bound=BaseClient, covariant=True)
 
 
 @overload
-async def overloaded_method(self: ClientT_co, return_self: Literal[True]) -> ClientT_co: ...
+async def overloaded_method(
+    self: ClientT_co,  # mypy: ignore  # zuban: ignore
+    return_self: Literal[True],
+) -> ClientT_co: ...
 @overload
-async def overloaded_method(self, return_self: Literal[False]) -> None: ...
-async def overloaded_method(self: ClientT_co, return_self: bool) -> ClientT_co | None:
+async def overloaded_method(self: BaseClient, return_self: Literal[False]) -> None: ...
+async def overloaded_method(
+    self: ClientT_co,  # mypy: ignore  # zuban: ignore
+    return_self: bool,
+) -> ClientT_co | None:
     """Return `self` iff `return_self` is `True`, otherwise return `None`."""
     if return_self:
         return self
+    return None
 
 
 class SyncClient(BaseClient, zyncio.SyncMixin):
@@ -151,7 +168,7 @@ class ClientUser(Generic[ClientT_co]):
     @zyncio.zmethod
     async def use(self, x: int) -> int:
         """Return `x` unchanged by calling through to `self.client.simple_zmethod`."""
-        return await self.client.simple_zmethod.z(x)
+        return await self.client.simple_method.z(x)
 
     @property
     def user(self) -> 'ClientUserUser[Self]':
@@ -159,7 +176,7 @@ class ClientUser(Generic[ClientT_co]):
         return ClientUserUser(self)
 
 
-ClientUserT_co = TypeVar('ClientUserT_co', bound=ClientUser[BaseClient])
+ClientUserT_co = TypeVar('ClientUserT_co', bound=ClientUser[BaseClient], covariant=True)
 
 
 class ClientUserUser(Generic[ClientUserT_co]):
